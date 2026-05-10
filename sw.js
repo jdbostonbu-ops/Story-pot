@@ -1,15 +1,16 @@
 'use strict';
 
-const CACHE_VERSION = 'storypot-dark-v2';
+const CACHE_VERSION = 'storypot-dark-v3';
 const ASSETS = [
     './',
-    './home.html',
+    './index.html',
     './home.css',
     './home.js',
-    './index.html',
+    './recorder.html',
     './style.css',
     './app.js',
-    './manifest.json'
+    './manifest.json',
+    './booknotelogo.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -40,7 +41,7 @@ self.addEventListener('fetch', (event) => {
             }
             return resp;
         }).catch(() =>
-            caches.match(req).then(cached => cached || caches.match('./home.html'))
+            caches.match(req).then(cached => cached || caches.match('./index.html'))
         )
     );
 });

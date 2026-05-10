@@ -108,7 +108,7 @@
 
         // Tapping a placeholder takes the user to the recorder
         card.addEventListener('click', () => {
-            window.location.href = 'index.html';
+            window.location.href = 'recorder.html';
         });
 
         return card;
@@ -170,7 +170,7 @@
             if (allWithPhotos.length > 1) {
                 openGallery(slot, allWithPhotos);
             } else {
-                window.location.href = 'index.html';
+                window.location.href = 'recorder.html';
             }
         });
 
@@ -250,7 +250,7 @@
             tile.appendChild(tileCap);
 
             tile.addEventListener('click', () => {
-                window.location.href = 'index.html';
+                window.location.href = 'recorder.html';
             });
 
             grid.appendChild(tile);

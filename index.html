@@ -1,430 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0A0A0A">
-<meta name="description" content="Story Pot — From tacos to stories. Record your grandmother's recipes, songs, and stories before they're gone. Local-only, no account.">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Story Pot — A family memory archive</title>
+<meta name="theme-color" content="#0A0A0A" />
 
-<title>Story Pot — From tacos to stories.</title>
-
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="booknotelogo.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Story Pot">
-
-<!--
-  Brutalist typography stack:
-  - Archivo Black (wordmark, big numerals, headings)
-  - Space Mono (utility UI, captions, recording timer, technical data)
-  - Inter (transcribed prose — softer voice for grandmother's words)
--->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="home.css" />
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="booknotelogo.png"><!--adding note to test if app opens on home-->
 </head>
 <body>
+<div class="app-shell">
 
-<!-- ════════════════════════════════════════════════════════════
-     HOME SCREEN — wordmark, search, family row, recent stack, FAB
-     ═══════════════════════════════════════════════════════════ -->
-<main class="stage" id="homeScreen">
+  <!-- HERO -->
+  <header class="hero">
 
-  <header class="masthead">
-    <div class="masthead-stripe" aria-hidden="true"></div>
-    <div class="masthead-row">
-      <div class="masthead-mark">
+    <!-- Top row: wordmark left, version right -->
+    <div class="hero-topbar">
+      <div class="hero-wordmark">
         <img src="booknotelogo.png" width="150px">
-        <h1 class="wordmark"><span class="wordmark-big">Story</span><span class="wordmark-small">pot</span></h1>
+        <span class="hero-wordmark-big">Story</span><span class="hero-wordmark-small">pot</span>
+        
       </div>
-      <div class="masthead-info">
-        <div class="topbar-meta">
-          <span class="dot"></span>
-          <span>v.1 · local</span>
-        </div>
-        <p class="tagline">A family memory archive</p>
-      </div>
+      
+      <span class="hero-version">v.1</span>
     </div>
+
+    <!-- Eyebrow -->
+    <p class="hero-eyebrow">A family memory archive</p>
+
+    <!-- Big editorial headline. The slogan is one strong line, italic indigo
+         emphasis on the operative phrase. -->
+    <h1 class="hero-headline">
+      What we cooked,<br>
+      what we <em>sang,</em><br>
+      what we said.
+    </h1>
+
+    <!-- Supporting line -->
+    <p class="hero-sub">
+      Record your grandmother's recipes, your father's songs, your aunt's stories
+      &mdash; in their voice, kept in your family archive.
+    </p>
+
+    <!-- Primary CTA -->
+    <a href="recorder.html" class="hero-cta">
+      Begin
+      <span class="hero-cta-arrow" aria-hidden="true">&rarr;</span>
+    </a>
+
+    <!-- Trust line -->
+    <p class="hero-trust">No account &middot; Stays on your device</p>
+
   </header>
 
-  <!-- Search bar — searches by name, title, category -->
-  <section class="search-section">
-    <label class="search-label" for="searchInput">Search ▸</label>
-    <input
-      type="text"
-      id="searchInput"
-      class="search-input"
-      placeholder="Recipes, names, stories"
-      autocomplete="off"
-      autocapitalize="characters"
-    >
-    <button type="button" class="search-clear" id="searchClear" aria-label="Clear search" hidden>✕</button>
-  </section>
-
-  <!-- Family — people whose recordings live in the pot -->
-  <section class="people-section">
-    <header class="section-head">
-      <h2 class="section-label">Family</h2>
-      <button type="button" class="link-btn" id="addPersonBtn">+ add</button>
-    </header>
-    <div class="people-row" id="peopleRow"></div>
-  </section>
-
-  <!-- Filter pills — by category -->
-  <section class="filter-section">
-    <header class="section-head">
-      <h2 class="section-label">Filter</h2>
-    </header>
-    <div class="filter-row">
-      <button type="button" class="filter-btn is-active" data-cat="all">All</button>
-      <button type="button" class="link-btn" id="addCategoryBtn" style="margin-left:auto;">+ new</button>
-    </div>
-  </section>
-
-  <!-- Recordings list -->
-  <section class="recordings-section">
-    <header class="section-head">
-      <h2 class="section-label" id="recordingsLabel">Recent</h2>
-      <div class="view-toggle" role="group" aria-label="Switch view">
-        <button type="button" class="view-toggle-btn is-active" id="viewListBtn" aria-pressed="true" aria-label="List view">
-          <span class="view-toggle-icon">≡</span> List
-        </button>
-        <button type="button" class="view-toggle-btn" id="viewGridBtn" aria-pressed="false" aria-label="Grid view">
-          <span class="view-toggle-icon">▦</span> Grid
-        </button>
-      </div>
-      <span class="section-count" id="recordingsCount"></span>
-    </header>
-    <div class="recordings-list" id="recordingsList"></div>
-    <div class="empty-state" id="emptyState" hidden>
-      <p class="empty-text">Nothing in the pot yet.</p>
-      <p class="empty-sub">Tap the big indigo button below to record your first story, recipe, or song.</p>
-    </div>
-  </section>
-
-  <!-- Storage meter — shows how full the device archive is -->
-  <section class="storage-section" id="storageSection" hidden>
-    <div class="storage-row">
-      <span class="storage-label">Storage used</span>
-      <span class="storage-value" id="storageValue">0 MB</span>
-    </div>
-    <div class="storage-bar"><div class="storage-fill" id="storageFill"></div></div>
-  </section>
-
-</main>
-
-<!-- The big record button (FAB) -->
-<button type="button" class="fab" id="fabBtn" aria-label="Record">●</button>
-
-<!-- ════════════════════════════════════════════════════════════
-     ADD PERSON MODAL
-     ═══════════════════════════════════════════════════════════ -->
-<div class="modal-backdrop" id="personModal" hidden role="dialog" aria-modal="true" aria-labelledby="personModalTitle">
-  <div class="modal">
-    <header class="modal-head">
-      <h2 id="personModalTitle">Add person</h2>
-      <button type="button" class="icon-btn" id="personCloseBtn" aria-label="Close">✕</button>
-    </header>
-    <form id="personForm" novalidate>
-      <label class="form-label" for="personName">Name</label>
-      <input type="text" id="personName" class="form-input" placeholder="Nana, Abuela, Papi..." required maxlength="40" autocomplete="off">
-      <p class="form-hint" id="personNameHint" hidden>Name already exists ▸</p>
-
-      <label class="form-label" for="personRelation">Relation (optional)</label>
-      <input type="text" id="personRelation" class="form-input" placeholder="Grandmother, Father, Aunt..." maxlength="40" autocomplete="off">
-
-      <label class="form-label">Avatar color</label>
-      <div class="swatch-row" id="swatchRow">
-        <button type="button" class="swatch is-active" data-color="#7C8FFF" style="background:#7C8FFF" aria-label="Indigo"></button>
-        <button type="button" class="swatch" data-color="#FFB347" style="background:#FFB347" aria-label="Amber"></button>
-        <button type="button" class="swatch" data-color="#FF6B9D" style="background:#FF6B9D" aria-label="Pink"></button>
-        <button type="button" class="swatch" data-color="#4ECDC4" style="background:#4ECDC4" aria-label="Teal"></button>
-        <button type="button" class="swatch" data-color="#FFD93D" style="background:#FFD93D" aria-label="Sun"></button>
-        <button type="button" class="swatch" data-color="#A8A8A8" style="background:#A8A8A8" aria-label="Silver"></button>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" id="personCancelBtn">Cancel</button>
-        <button type="submit" class="btn btn-solid">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════
-     ADD CATEGORY MODAL
-     ═══════════════════════════════════════════════════════════ -->
-<div class="modal-backdrop" id="categoryModal" hidden role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
-  <div class="modal">
-    <header class="modal-head">
-      <h2 id="categoryModalTitle">New category</h2>
-      <button type="button" class="icon-btn" id="categoryCloseBtn" aria-label="Close">✕</button>
-    </header>
-    <form id="categoryForm" novalidate>
-      <label class="form-label" for="categoryName">Category name</label>
-      <input type="text" id="categoryName" class="form-input" placeholder="Poem, Blessing, Joke..." required maxlength="20" autocomplete="off">
-      <p class="form-hint" id="categoryNameHint" hidden>Category already exists ▸</p>
-
-      <label class="form-label">Color</label>
-      <div class="swatch-row" id="catSwatchRow">
-        <button type="button" class="swatch is-active" data-color="#7C8FFF" style="background:#7C8FFF" aria-label="Indigo"></button>
-        <button type="button" class="swatch" data-color="#FFB347" style="background:#FFB347" aria-label="Amber"></button>
-        <button type="button" class="swatch" data-color="#FF6B9D" style="background:#FF6B9D" aria-label="Pink"></button>
-        <button type="button" class="swatch" data-color="#4ECDC4" style="background:#4ECDC4" aria-label="Teal"></button>
-        <button type="button" class="swatch" data-color="#A8A8A8" style="background:#A8A8A8" aria-label="Silver"></button>
-      </div>
-
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" id="categoryCancelBtn">Cancel</button>
-        <button type="submit" class="btn btn-solid">Save</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════
-     RECORDING SCREEN — full-screen modal
-     ═══════════════════════════════════════════════════════════ -->
-<div class="rec-modal" id="recModal" hidden>
-
-  <!-- Setup phase: choose person, category, mode (audio/video) -->
-  <section class="rec-setup" id="recSetup">
-    <header class="rec-head">
-      <h2>New recording</h2>
-      <button type="button" class="icon-btn" id="recSetupCloseBtn" aria-label="Close">✕</button>
-    </header>
-
-    <label class="form-label">WHO?</label>
-    <div class="people-row people-row--small" id="recPeopleRow"></div>
-
-    <label class="form-label">What kind?</label>
-    <div class="filter-row" id="recCategoryRow"></div>
-
-    <label class="form-label" for="recTitle">Title</label>
-    <input type="text" id="recTitle" class="form-input" placeholder="Nana's pierogi..." maxlength="60" autocomplete="off">
-
-    <label class="form-label" for="recLanguage">Language</label>
-    <select id="recLanguage" class="form-input form-select"></select>
-
-    <!-- Photo (optional) — user can take a photo with the camera OR upload from library -->
-    <label class="form-label">Photo (optional)</label>
-    <div class="photo-controls">
-      <button type="button" class="btn btn-ghost photo-btn" id="recPhotoTakeBtn">
-        <span class="photo-btn-icon">📷</span> Take photo
-      </button>
-      <button type="button" class="btn btn-ghost photo-btn" id="recPhotoUploadBtn">
-        <span class="photo-btn-icon">🖼</span> Upload
-      </button>
-      <!-- Hidden file input for upload-from-library. The 'capture' attribute
-           lets mobile browsers offer the camera as an option too. -->
-      <input type="file" id="recPhotoFile" accept="image/*" hidden>
-    </div>
-    <!-- Photo preview — only visible after a photo is selected -->
-    <div class="photo-preview" id="recPhotoPreview" hidden>
-      <img id="recPhotoPreviewImg" alt="Recording photo preview">
-      <button type="button" class="photo-preview-clear" id="recPhotoClearBtn" aria-label="Remove photo">✕</button>
-    </div>
-
-    <label class="form-label">Mode</label>
-    <div class="mode-row">
-      <button type="button" class="mode-btn is-active" data-mode="audio">
-        <span class="mode-icon">●</span>
-        <span class="mode-label">Audio</span>
-        <span class="mode-sub">Voice only</span>
-      </button>
-      <button type="button" class="mode-btn" data-mode="video">
-        <span class="mode-icon">▶</span>
-        <span class="mode-label">Video</span>
-        <span class="mode-sub">Show the technique</span>
-      </button>
-    </div>
-
-    <label class="form-label">Transcribe</label>
-    <div class="transcribe-row">
-      <button type="button" class="transcribe-toggle is-active" id="transcribeToggle" aria-pressed="true">
-        <span class="transcribe-pip"></span>
-        <span class="transcribe-label">AUTO-TRANSCRIBE TO TEXT</span>
-      </button>
-    </div>
-
-    <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" id="recSetupCancelBtn">Cancel</button>
-      <button type="button" class="btn btn-solid" id="recSetupGoBtn">Start ▸</button>
-    </div>
-  </section>
-
-  <!-- Active phase: live recording with timer, waveform, video preview -->
-  <section class="rec-active" id="recActive" hidden>
-    <header class="rec-head rec-head--live">
-      <div class="rec-pulse-row">
-        <span class="rec-pulse"></span>
-        <span class="rec-status">Recording</span>
-      </div>
-      <button type="button" class="icon-btn" id="recActiveCancelBtn" aria-label="Cancel">✕</button>
-    </header>
-
-    <div class="rec-context">
-      <div class="rec-context-line">
-        <span class="rec-context-label">WHO ▸</span>
-        <span id="recActivePerson"></span>
-      </div>
-      <div class="rec-context-line">
-        <span class="rec-context-label">WHAT ▸</span>
-        <span id="recActiveTitle"></span>
-      </div>
-    </div>
-
-    <!-- Video preview (hidden when audio mode) -->
-    <div class="rec-video-wrap" id="recVideoWrap" hidden>
-      <video id="recVideo" autoplay playsinline muted></video>
-    </div>
-
-    <!-- Big timer -->
-    <div class="rec-timer" id="recTimer">00:00</div>
-
-    <!-- Live waveform -->
-    <div class="rec-wave" id="recWave"></div>
-
-    <!-- Live transcription preview -->
-    <div class="rec-transcript-wrap" id="recTranscriptWrap" hidden>
-      <p class="rec-transcript-label">TRANSCRIBING ▸</p>
-      <p class="rec-transcript" id="recTranscript"></p>
-    </div>
-
-    <!-- Controls -->
-    <div class="rec-controls">
-      <button type="button" class="rec-pause-btn" id="recPauseBtn" aria-label="Pause">⏸</button>
-      <button type="button" class="rec-stop-btn" id="recStopBtn" aria-label="Stop">■</button>
-    </div>
-    <div class="rec-controls-hint">TAP ■ TO STOP &amp; SAVE</div>
+  <!-- Recordings dashboard -->
+  <section class="home-recordings" id="homeRecordings" aria-live="polite">
+    <!-- home.js renders into here -->
   </section>
 
 </div>
 
-<!-- ════════════════════════════════════════════════════════════
-     PLAYBACK / DETAIL MODAL — single-page view of a recording
-     ═══════════════════════════════════════════════════════════ -->
-<div class="modal-backdrop" id="detailModal" hidden role="dialog" aria-modal="true">
-  <div class="modal modal-large">
-    <header class="modal-head">
-      <h2 id="detailModalTitle">Recording</h2>
-      <button type="button" class="icon-btn" id="detailCloseBtn" aria-label="Close">✕</button>
-    </header>
-
-    <div class="detail-view">
-      <div class="detail-cat-pill" id="flipCatPill">Recipe</div>
-      <h3 class="detail-title" id="flipTitle">Recording title</h3>
-      <p class="detail-attribution" id="flipAttribution">From Nana · March 2026</p>
-
-      <!-- Photo (if recording has one) — appears above the media player -->
-      <img class="detail-photo" id="detailPhoto" alt="" hidden>
-
-      <div class="detail-media-wrap" id="flipMediaWrap">
-        <audio class="detail-media detail-audio" id="flipAudio" controls hidden></audio>
-        <video class="detail-media detail-video" id="flipVideo" controls playsinline hidden></video>
-      </div>
-
-      <div class="detail-meta-row">
-        <span id="flipDuration">0 min</span>
-        <span id="flipMode">Audio</span>
-      </div>
-
-      <div class="detail-transcript-section">
-        <p class="detail-transcript-label">Transcript ▸</p>
-        <div class="detail-transcript" id="flipTranscript">
-          (No transcript yet. Tap edit to add one.)
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-actions modal-actions--space">
-      <button type="button" class="btn btn-ghost btn-danger" id="detailDeleteBtn">Delete</button>
-      <button type="button" class="btn btn-solid" id="detailEditBtn">Edit transcript</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════
-     EDIT TRANSCRIPT MODAL
-     ═══════════════════════════════════════════════════════════ -->
-<div class="modal-backdrop" id="editModal" hidden role="dialog" aria-modal="true">
-  <div class="modal">
-    <header class="modal-head">
-      <h2>Edit transcript</h2>
-      <button type="button" class="icon-btn" id="editCloseBtn" aria-label="Close">✕</button>
-    </header>
-    <p class="modal-helper">Edit the text, fix typos, or type it out by hand.</p>
-    <textarea id="editTextarea" class="form-input form-textarea" rows="10" placeholder="Type or paste the recipe / story here..."></textarea>
-    <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" id="editCancelBtn">Cancel</button>
-      <button type="button" class="btn btn-solid" id="editSaveBtn">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════
-     TRANSCRIPTION DISCLOSURE — first-time only
-     ═══════════════════════════════════════════════════════════ -->
-<div class="modal-backdrop" id="transcribeDisclosureModal" hidden role="dialog" aria-modal="true">
-  <div class="modal">
-    <header class="modal-head">
-      <h2>About transcription</h2>
-    </header>
-    <p class="modal-body">Transcription turns your recording into written text you can read and search.</p>
-    <p class="modal-body">Your phone's built-in speech recognition does the work. This means a copy of your audio is sent to Apple or Google for transcription only. They don't store it.</p>
-    <p class="modal-body modal-body--strong">The original recording always stays on your device.</p>
-    <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" id="transcribeDisclosureSkipBtn">Skip transcription</button>
-      <button type="button" class="btn btn-solid" id="transcribeDisclosureOkBtn">Got it, use it</button>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════════════════════
-     already exists modal — duplicate prevention prompt
-     ═══════════════════════════════════════════════════════════ -->
-<div class="modal-backdrop" id="duplicateModal" hidden role="dialog" aria-modal="true" aria-labelledby="duplicateModalTitle">
-  <div class="modal">
-    <header class="modal-head">
-      <h2 id="duplicateModalTitle">Already exists</h2>
-    </header>
-    <p class="modal-body modal-body--strong" id="duplicateModalMessage">This already exists.</p>
-    <p class="modal-body" id="duplicateModalSub">Use the one you already have?</p>
-    <div class="modal-actions">
-      <button type="button" class="btn btn-ghost" id="duplicateCancelBtn">Cancel</button>
-      <button type="button" class="btn btn-solid" id="duplicateUseExistingBtn">Use existing</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast for soft feedback -->
-<!-- CAMERA SNAPSHOT MODAL — appears when user taps "Take photo".
-     Shows live camera feed with a snapshot button; the captured frame
-     becomes the photo for the recording. -->
-<div class="modal-backdrop" id="cameraModal" hidden role="dialog" aria-modal="true" aria-label="Take a photo">
-  <div class="modal modal-large camera-modal">
-    <header class="modal-head">
-      <h2>Take a photo</h2>
-      <button type="button" class="icon-btn" id="cameraCloseBtn" aria-label="Close camera">✕</button>
-    </header>
-    <div class="camera-stage">
-      <video id="cameraVideo" autoplay playsinline muted></video>
-    </div>
-    <div class="modal-actions modal-actions--space">
-      <button type="button" class="btn btn-ghost" id="cameraCancelBtn">Cancel</button>
-      <button type="button" class="btn btn-solid" id="cameraSnapBtn">Snap photo</button>
-    </div>
-    <!-- Hidden canvas used to grab the frame from the video -->
-    <canvas id="cameraCanvas" hidden></canvas>
-  </div>
-</div>
-
-<div class="toast" id="toast" aria-live="polite" hidden></div>
-
-<script src="app.js"></script>
+<script src="home.js" defer></script>
 </body>
 </html>
