@@ -124,6 +124,35 @@ body {
   gap: var(--sp-1);
 }
 
+/* Home icon link — small, quiet circle in the masthead. Goes back to the
+   welcome page (index.html). Indigo glow on hover matches the FAB and CTA. */
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--c-divider);
+  background: var(--c-paper-2);
+  color: var(--c-ink-soft);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  margin-bottom: var(--sp-1);
+}
+
+.home-link:hover,
+.home-link:focus-visible {
+  color: var(--c-paper);
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  box-shadow: 0 0 16px rgba(124, 143, 255, 0.4);
+}
+
+.home-link:active {
+  transform: scale(0.95);
+}
+
 .wordmark {
   font-family: var(--font-display);
   font-style: normal;
