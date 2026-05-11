@@ -280,11 +280,8 @@ The whole app is **five factory functions** wired together by an `init()` functi
 ## 🎓 Future Vision
 
 - **Export Recordings:** A way to download recordings as standard `.webm` / `.mp4` files for permanent backup outside the browser. Solves the iOS-storage-retention concern for long-term family archiving.
-- **Family Sharing (Optional):** Generate a shareable link to a single recording (encoded as a data URL or pushed to a one-time-use share endpoint) so a family member can hear Nana's pierogi recipe without installing the app themselves.
 - **Bulk Tag Editing:** Multi-select recordings and re-categorize or re-attribute them in one move.
 - **Recording Notes:** Add written notes alongside the transcript (e.g., *"This is the version Nana made for Christmas, not the everyday one"*).
-- **Edit Photo After the Fact:** Replace a recording's cover photo from the detail view if the original snap didn't turn out well.
-- **Per-Person Settings Panel:** Edit a person's name, color, or default language after they've been added; merge two people if they were accidentally added twice with different spellings.
 - **Print Recipe Cards:** Generate a printable PDF version of any Recipe-categorized recording &mdash; title, attribution, transcript formatted as a real recipe card. Family-cookbook output, on demand.
 
 ## 🧰 Run It Locally
