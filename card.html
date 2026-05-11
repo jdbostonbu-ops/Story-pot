@@ -285,9 +285,9 @@
 <div class="card-toolbar" id="cardToolbar">
   <h1>Story Pot Card</h1>
   <div class="card-toolbar-actions">
-    <button type="button" class="toolbar-btn" id="cardCloseBtn">Close</button>
-    <button type="button" class="toolbar-btn" id="cardShareBtn" hidden>Share</button>
-    <button type="button" class="toolbar-btn toolbar-btn-primary" id="cardPrintBtn">Save as PDF</button>
+    <button type="button" class="toolbar-btn" id="cardCloseBtn">Back</button>
+    <button type="button" class="toolbar-btn" id="cardPrintBtn">Save as PDF</button>
+    <button type="button" class="toolbar-btn toolbar-btn-primary" id="cardShareBtn" hidden>Share</button>
   </div>
 </div>
 
@@ -415,11 +415,14 @@
     });
 
     document.getElementById('cardCloseBtn').addEventListener('click', () => {
-        window.close();
-        // If window.close didn't work (not opened via JS), navigate back
-        setTimeout(() => {
-            if (!window.closed) window.history.back();
-        }, 100);
+        // Inside an installed PWA there's no tab to close. Navigate back to
+        // the recorder instead. window.history.back() works if the user came
+        // from the recorder; we fall back to direct navigation if not.
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = 'recorder.html';
+        }
     });
 
     /* Native share if supported (mobile mostly) */
@@ -427,15 +430,40 @@
         const shareBtn = document.getElementById('cardShareBtn');
         shareBtn.hidden = false;
         shareBtn.addEventListener('click', async () => {
+            // Build a nicely formatted text share of the card
+            const lines = [];
+            lines.push(card.title || 'Story Pot recording');
+            if (card.categoryName) lines.push(`(${card.categoryName})`);
+            if (card.personName) {
+                let attribLine = `from ${card.personName}`;
+                if (card.createdAt) attribLine += ` · ${formatDate(card.createdAt)}`;
+                lines.push(attribLine);
+            }
+            lines.push('');
+            if (card.transcript && card.transcript.trim()) {
+                lines.push(card.transcript);
+            } else {
+                lines.push('(no transcript)');
+            }
+            lines.push('');
+            lines.push('— shared from Story Pot');
+            const shareText = lines.join('\n');
+
             try {
                 await navigator.share({
                     title: card.title || 'Story Pot card',
-                    text: `${card.title || 'A recording'}${card.personName ? ` from ${card.personName}` : ''}\n\n${card.transcript || ''}`,
-                    url: window.location.href
+                    text: shareText
                 });
             } catch (err) {
                 if (err && err.name === 'AbortError') return;
                 console.warn('Card share failed:', err);
+                // Fallback — copy to clipboard
+                try {
+                    await navigator.clipboard.writeText(shareText);
+                    alert('Card copied to clipboard.');
+                } catch {
+                    alert('Could not share. Try Save as PDF instead.');
+                }
             }
         });
     }

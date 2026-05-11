@@ -2393,9 +2393,11 @@ function init() {
             return;
         }
 
-        // Open the card in a new tab so the user can save-as-PDF without
-        // navigating away from the recorder.
-        window.open('card.html', '_blank');
+        // Navigate to the card view in the same window.
+        // window.open('_blank') doesn't work inside an installed PWA on iOS —
+        // PWAs run in standalone mode with no tab switcher, so the open call
+        // silently fails. In-place navigation works everywhere.
+        window.location.href = 'card.html';
     });
 
     /* ─── Replace Photo modal — open from detail view ─── */
