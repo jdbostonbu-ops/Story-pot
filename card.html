@@ -449,6 +449,50 @@
             lines.push('— shared from Story Pot');
             const shareText = lines.join('\n');
 
+            // Build photo File if the card has a photo. Convert from dataURL → Blob → File.
+            // If photo conversion or file share fails, fall back to text-only share.
+            let photoFile = null;
+            if (card.photoDataUrl) {
+                try {
+                    const commaIdx = card.photoDataUrl.indexOf(',');
+                    if (commaIdx > 0) {
+                        const byteString = atob(card.photoDataUrl.substring(commaIdx + 1));
+                        const mimeMatch = card.photoDataUrl.match(/^data:([^;]+);/);
+                        const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let i = 0; i < byteString.length; i++) {
+                            ia[i] = byteString.charCodeAt(i);
+                        }
+                        const blob = new Blob([ab], { type: mime });
+                        const safeName = (card.title || 'storypot')
+                            .replace(/[^a-z0-9-_]+/gi, '_')
+                            .slice(0, 40) || 'storypot';
+                        const ext = mime.includes('png') ? 'png' : 'jpg';
+                        photoFile = new File([blob], `${safeName}.${ext}`, { type: mime });
+                    }
+                } catch (err) {
+                    console.warn('Photo conversion failed, sharing text-only:', err);
+                }
+            }
+
+            // Try sharing with photo attached if we have one and the browser supports it
+            if (photoFile && navigator.canShare && navigator.canShare({ files: [photoFile] })) {
+                try {
+                    await navigator.share({
+                        title: card.title || 'Story Pot card',
+                        text: shareText,
+                        files: [photoFile]
+                    });
+                    return; // success
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                    console.warn('Card share with photo failed, trying text-only:', err);
+                    // fall through to text-only
+                }
+            }
+
+            // Text-only fallback
             try {
                 await navigator.share({
                     title: card.title || 'Story Pot card',
@@ -457,7 +501,7 @@
             } catch (err) {
                 if (err && err.name === 'AbortError') return;
                 console.warn('Card share failed:', err);
-                // Fallback — copy to clipboard
+                // Last-resort fallback — copy to clipboard
                 try {
                     await navigator.clipboard.writeText(shareText);
                     alert('Card copied to clipboard.');

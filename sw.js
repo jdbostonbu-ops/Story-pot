@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = 'storypot-dark-v5';
+const CACHE_VERSION = 'storypot-dark-v6';
 const ASSETS = [
     './',
     './index.html',
