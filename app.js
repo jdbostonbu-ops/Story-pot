@@ -338,6 +338,28 @@ function createPersonStore() {
         getPersonById(id) {
             return _people.find(p => p.id === id) || null;
         },
+        updatePerson(id, patch) {
+            const idx = _people.findIndex(p => p.id === id);
+            if (idx < 0) return null;
+            const updated = {
+                ..._people[idx],
+                ...(patch.name !== undefined ? { name: String(patch.name).trim() } : {}),
+                ...(patch.relation !== undefined ? { relation: String(patch.relation).trim() } : {}),
+                ...(patch.color !== undefined ? { color: patch.color } : {})
+            };
+            _people[idx] = updated;
+            _saveJSON(KEY_PEOPLE, _people);
+            _emit();
+            return updated;
+        },
+        removePerson(id) {
+            const idx = _people.findIndex(p => p.id === id);
+            if (idx < 0) return false;
+            _people.splice(idx, 1);
+            _saveJSON(KEY_PEOPLE, _people);
+            _emit();
+            return true;
+        },
 
         /* Categories */
         getCategories: () => [..._categories],
@@ -877,6 +899,14 @@ function init() {
         if (useLight) avatar.classList.add('is-light');
         avatar.textContent = getInitial(person.name);
         cell.appendChild(avatar);
+
+        // Edit pencil button — small, sits in the corner of the avatar
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'person-edit-btn';
+        editBtn.setAttribute('aria-label', `Edit ${person.name}`);
+        editBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+        cell.appendChild(editBtn);
 
         const nameEl = document.createElement('div');
         nameEl.className = 'person-name';
@@ -2159,6 +2189,465 @@ function init() {
             // Only close if in setup phase
             if (!recSetup.hidden) closeRecordingFlow();
         }
+    });
+
+    /* ══════════════════════════════════════════════════════════════════
+       FEATURE BLOCK — added in v2: edit photo, download recording,
+       native share, share as card, edit person.
+       Each feature operates on the recording currently open in the
+       detail modal (tracked via _currentDetailRecId), except edit-person
+       which operates on the avatar the user tapped the pencil on.
+       ══════════════════════════════════════════════════════════════════ */
+
+    /* ─── Helper: turn a blob into a download-named file ─── */
+    function _safeFilename(s) {
+        return String(s || 'recording')
+            .replace(/[^a-z0-9\-_]+/gi, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_|_$/g, '')
+            .slice(0, 50) || 'recording';
+    }
+
+    function _filenameForRec(rec, blobMimeType) {
+        // Pick an extension from the MIME type, fallback to webm
+        let ext = 'webm';
+        if (blobMimeType) {
+            if (blobMimeType.includes('mp4'))   ext = 'mp4';
+            else if (blobMimeType.includes('mpeg')) ext = 'mp3';
+            else if (blobMimeType.includes('wav'))  ext = 'wav';
+            else if (blobMimeType.includes('ogg'))  ext = 'ogg';
+            else if (blobMimeType.includes('webm')) ext = 'webm';
+        }
+        const titlePart = _safeFilename(rec.title || 'recording');
+        return `storypot-${titlePart}.${ext}`;
+    }
+
+    /* ─── Download recording ─── */
+    $('detailDownloadBtn').addEventListener('click', async () => {
+        if (!_currentDetailRecId) return;
+        const rec = store.getRecordingById(_currentDetailRecId);
+        if (!rec) return;
+        try {
+            const blobRecord = await archive.getBlob(rec.blobId);
+            if (!blobRecord || !blobRecord.blob) {
+                showToast('Recording not found.');
+                return;
+            }
+            const filename = _filenameForRec(rec, blobRecord.mimeType || blobRecord.blob.type);
+            const url = URL.createObjectURL(blobRecord.blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            // Revoke shortly after to let the download start
+            setTimeout(() => URL.revokeObjectURL(url), 4000);
+            showToast('Downloading recording.');
+        } catch (err) {
+            console.warn('[storypot] Download failed:', err);
+            showToast('Could not download recording.');
+        }
+    });
+
+    /* ─── Capability detection for share button ───
+       Show the Share button whenever navigator.share exists at all.
+       The button's click handler has a fallback chain (file → url → clipboard)
+       so it does something useful on every browser that supports any kind of share. */
+    function _setupShareButton() {
+        const shareBtn = $('detailShareBtn');
+        if (!shareBtn) return;
+        // Show if ANY form of share works — file, url, or clipboard
+        if (navigator.share || (navigator.clipboard && navigator.clipboard.writeText)) {
+            shareBtn.hidden = false;
+        }
+    }
+    _setupShareButton();
+
+    /* ─── Native share recording — with smart fallback chain ───
+       Strategy:
+       1. Try file share (audio/video attached). Works on iPhone Safari + Android Chrome.
+       2. If file share fails with anything except user-cancel, fall back to URL+text share.
+          This works on macOS Chrome where canShare({ files }) reports true but the
+          actual share dialog refuses files.
+       3. If URL share also fails, copy a share-text to clipboard.
+       User never sees the fallback machinery — just gets something useful. */
+    $('detailShareBtn').addEventListener('click', async () => {
+        if (!_currentDetailRecId) return;
+        const rec = store.getRecordingById(_currentDetailRecId);
+        if (!rec) return;
+
+        const person = store.getPersonById(rec.personId);
+        const title = rec.title || 'Story Pot recording';
+        const attribution = person ? `from ${person.name}` : 'from Story Pot';
+        const pageUrl = window.location.href;
+
+        // STAGE 1 — Try file share
+        let blobRecord = null;
+        try {
+            blobRecord = await archive.getBlob(rec.blobId);
+        } catch (err) {
+            console.warn('[storypot] Share: blob load failed:', err);
+        }
+
+        if (blobRecord && blobRecord.blob && navigator.share && navigator.canShare) {
+            try {
+                const filename = _filenameForRec(rec, blobRecord.mimeType || blobRecord.blob.type);
+                const file = new File([blobRecord.blob], filename, {
+                    type: blobRecord.mimeType || blobRecord.blob.type || 'audio/webm'
+                });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        title,
+                        text: attribution,
+                        files: [file]
+                    });
+                    showToast('Shared.');
+                    return;
+                }
+            } catch (err) {
+                // User canceled — don't fall through, just stop
+                if (err && err.name === 'AbortError') return;
+                console.warn('[storypot] File share failed, trying URL share:', err);
+                // fall through to URL share
+            }
+        }
+
+        // STAGE 2 — Try URL + text share (no file)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title,
+                    text: `${title} — ${attribution}\nListen on Story Pot:`,
+                    url: pageUrl
+                });
+                showToast('Shared.');
+                return;
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+                console.warn('[storypot] URL share failed, trying clipboard:', err);
+                // fall through to clipboard
+            }
+        }
+
+        // STAGE 3 — Clipboard fallback
+        const shareText = `${title} — ${attribution}\nListen on Story Pot: ${pageUrl}`;
+        try {
+            await navigator.clipboard.writeText(shareText);
+            showToast('Link copied to clipboard.');
+        } catch (err) {
+            console.warn('[storypot] Clipboard fallback failed:', err);
+            showToast('Could not share. Try downloading instead.');
+        }
+    });
+
+    /* ─── Share as Card — opens a printable card view in a new tab ───
+       The card view is a new page (card.html) that reads the recording
+       data via localStorage handoff, renders a printable card, and lets
+       the user print to PDF or use the native share. */
+    $('detailShareCardBtn').addEventListener('click', async () => {
+        if (!_currentDetailRecId) return;
+        const rec = store.getRecordingById(_currentDetailRecId);
+        if (!rec) return;
+        const person = store.getPersonById(rec.personId);
+        const category = store.getCategoryById(rec.categoryId);
+
+        // Pack the card data into a temporary localStorage entry.
+        // Photo and audio blobs are too big to pass via URL, so we encode
+        // just the photo as a dataURL (audio isn't needed on the card).
+        let photoDataUrl = null;
+        if (rec.photoBlobId) {
+            try {
+                const photoRec = await archive.getBlob(rec.photoBlobId);
+                if (photoRec && photoRec.blob) {
+                    photoDataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(reader.error);
+                        reader.readAsDataURL(photoRec.blob);
+                    });
+                }
+            } catch (err) {
+                console.warn('[storypot] Card photo load failed:', err);
+            }
+        }
+
+        const cardData = {
+            title: rec.title || '(untitled)',
+            personName: person ? person.name : '',
+            personColor: person ? person.color : '#7C8FFF',
+            categoryName: category ? category.name : '',
+            categoryColor: category ? category.color : '#7C8FFF',
+            transcript: rec.transcript || '',
+            createdAt: rec.createdAt || Date.now(),
+            durationMs: rec.durationMs || 0,
+            mode: rec.mode || 'audio',
+            photoDataUrl
+        };
+
+        try {
+            sessionStorage.setItem('storypot-dark.card-handoff', JSON.stringify(cardData));
+        } catch (err) {
+            console.warn('[storypot] Card handoff storage failed:', err);
+            showToast('Card too large to share. Try without photo.');
+            return;
+        }
+
+        // Open the card in a new tab so the user can save-as-PDF without
+        // navigating away from the recorder.
+        window.open('card.html', '_blank');
+    });
+
+    /* ─── Replace Photo modal — open from detail view ─── */
+    const replacePhotoModal = $('replacePhotoModal');
+
+    $('detailReplacePhotoBtn').addEventListener('click', () => {
+        if (!_currentDetailRecId) return;
+        replacePhotoModal.hidden = false;
+    });
+
+    function _closeReplacePhotoModal() {
+        replacePhotoModal.hidden = true;
+    }
+    $('replacePhotoCloseBtn').addEventListener('click', _closeReplacePhotoModal);
+    $('replacePhotoCancelBtn').addEventListener('click', _closeReplacePhotoModal);
+
+    /* Helper: save a photo blob to the recording in the detail view */
+    async function _saveReplacementPhoto(blob) {
+        if (!_currentDetailRecId) return;
+        const rec = store.getRecordingById(_currentDetailRecId);
+        if (!rec) return;
+        try {
+            // Save the new photo blob
+            const photoBlobId = await archive.saveBlob(blob, blob.type || 'image/jpeg', 0);
+            // Delete old photo blob if there was one
+            if (rec.photoBlobId) {
+                try { await archive.deleteBlob(rec.photoBlobId); } catch {}
+            }
+            // Update the recording metadata
+            store.updateRecording(rec.id, { photoBlobId });
+            showToast('Photo updated.');
+            _closeReplacePhotoModal();
+            // Re-open the detail view so the new photo loads
+            openDetailModal(rec.id);
+        } catch (err) {
+            console.warn('[storypot] Replace photo failed:', err);
+            showToast('Could not update photo.');
+        }
+    }
+
+    /* Replace photo — Take Photo path. Reuses the camera modal. */
+    $('replacePhotoTakeBtn').addEventListener('click', async () => {
+        // Open the camera, but route the snap output through the replacement flow
+        _replaceModeActive = true;
+        _closeReplacePhotoModal();
+        try {
+            _cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+            const video = $('cameraVideo');
+            video.srcObject = _cameraStream;
+            $('cameraModal').hidden = false;
+        } catch (err) {
+            console.error('Camera access failed:', err);
+            const msg = err.name === 'NotAllowedError'
+                ? 'Camera access denied.'
+                : 'Could not open camera.';
+            showToast(msg);
+            _replaceModeActive = false;
+        }
+    });
+
+    /* Replace photo — Upload path */
+    let _replaceModeActive = false;
+    $('replacePhotoUploadBtn').addEventListener('click', () => {
+        $('replacePhotoUploadInput').click();
+    });
+    $('replacePhotoUploadInput').addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        e.target.value = ''; // reset for next time
+        // Optionally resize via canvas for consistency with snap photo
+        try {
+            const resized = await _resizeImageBlob(file, 1200);
+            _closeReplacePhotoModal();
+            await _saveReplacementPhoto(resized);
+        } catch (err) {
+            console.warn('[storypot] Upload resize failed, using original:', err);
+            _closeReplacePhotoModal();
+            await _saveReplacementPhoto(file);
+        }
+    });
+
+    /* Replace photo — Remove path */
+    $('replacePhotoRemoveBtn').addEventListener('click', async () => {
+        if (!_currentDetailRecId) return;
+        const rec = store.getRecordingById(_currentDetailRecId);
+        if (!rec) return;
+        try {
+            if (rec.photoBlobId) {
+                try { await archive.deleteBlob(rec.photoBlobId); } catch {}
+            }
+            store.updateRecording(rec.id, { photoBlobId: null });
+            showToast('Photo removed.');
+            _closeReplacePhotoModal();
+            openDetailModal(rec.id);
+        } catch (err) {
+            console.warn('[storypot] Remove photo failed:', err);
+            showToast('Could not remove photo.');
+        }
+    });
+
+    /* Helper to resize an image blob via canvas (also strips most metadata) */
+    function _resizeImageBlob(blob, maxEdge) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                let w = img.naturalWidth, h = img.naturalHeight;
+                if (w > maxEdge || h > maxEdge) {
+                    if (w > h) { h = Math.round(h * maxEdge / w); w = maxEdge; }
+                    else { w = Math.round(w * maxEdge / h); h = maxEdge; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                const byteString = atob(dataUrl.split(',')[1]);
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+                resolve(new Blob([ab], { type: 'image/jpeg' }));
+                URL.revokeObjectURL(img.src);
+            };
+            img.onerror = () => reject(new Error('Image load failed'));
+            img.src = URL.createObjectURL(blob);
+        });
+    }
+
+    /* Hook into snap photo result — if replacement mode is active,
+       route the snapped photo to the recording instead of the recording-setup. */
+    const _origShowPhotoPreview = _showPhotoPreview;
+    _showPhotoPreview = function(blob) {
+        if (_replaceModeActive) {
+            _replaceModeActive = false;
+            _saveReplacementPhoto(blob);
+            return;
+        }
+        _origShowPhotoPreview(blob);
+    };
+
+    /* ─── Edit Person — pencil icon on family avatars ───
+       The existing personModal is reused with an "edit mode" flag.
+       In edit mode: title becomes "Edit person", delete button appears,
+       form is pre-filled, save updates instead of adds. */
+    let _editingPersonId = null;
+
+    function openEditPersonModal(personId) {
+        const person = store.getPersonById(personId);
+        if (!person) return;
+        _editingPersonId = personId;
+        const modal = $('personModal');
+        $('personModalTitle').textContent = 'Edit person';
+        $('personName').value = person.name || '';
+        $('personRelation').value = person.relation || '';
+        // Pre-select the matching color swatch
+        Array.from(swatchRow.querySelectorAll('.swatch')).forEach(s => {
+            s.classList.toggle('is-active', s.dataset.color === person.color);
+        });
+        // If no swatch matched (custom color), select the first one
+        if (!swatchRow.querySelector('.swatch.is-active')) {
+            swatchRow.querySelector('.swatch').classList.add('is-active');
+        }
+        $('personDeleteBtn').hidden = false;
+        $('personNameHint').hidden = true;
+        modal.hidden = false;
+        $('personName').focus();
+    }
+
+    /* Wrap the existing close handler to also clear edit mode */
+    const _origClosePerson = closePersonModal;
+    closePersonModal = function() {
+        _origClosePerson();
+        _editingPersonId = null;
+        $('personModalTitle').textContent = 'Add person';
+        $('personDeleteBtn').hidden = true;
+    };
+    // Rebind the handlers that were attached to the old reference
+    $('personCloseBtn').addEventListener('click', () => {
+        _editingPersonId = null;
+        $('personModalTitle').textContent = 'Add person';
+        $('personDeleteBtn').hidden = true;
+    });
+    $('personCancelBtn').addEventListener('click', () => {
+        _editingPersonId = null;
+        $('personModalTitle').textContent = 'Add person';
+        $('personDeleteBtn').hidden = true;
+    });
+
+    /* Listen on the family row for clicks on the edit pencil OR the avatar.
+       The existing handler on peopleRow already filters; we add a sibling
+       handler scoped to .person-edit-btn elements. */
+    peopleRow.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.person-edit-btn');
+        if (editBtn) {
+            e.stopPropagation(); // don't trigger the parent cell click
+            const cell = editBtn.closest('.person-cell');
+            if (cell && cell.dataset.personId) {
+                openEditPersonModal(cell.dataset.personId);
+            }
+        }
+    });
+
+    /* Patch the person form submit to support edit mode */
+    const _origPersonForm = personForm;
+    // We need to override the submit handler. The original handler is already
+    // attached; we'll add a capture-phase listener that intercepts BEFORE the
+    // original fires when in edit mode.
+    personForm.addEventListener('submit', (e) => {
+        if (!_editingPersonId) return; // let the original add-person handler run
+        e.preventDefault();
+        e.stopImmediatePropagation(); // prevent the add-person handler from also firing
+        const name = $('personName').value.trim();
+        const relation = $('personRelation').value.trim();
+        const colorBtn = swatchRow.querySelector('.swatch.is-active');
+        const color = colorBtn ? colorBtn.dataset.color : '#7C8FFF';
+        if (!name) {
+            $('personName').focus();
+            return;
+        }
+        // Check for duplicate names against OTHER people (not self)
+        const dup = store.getPeople().find(p =>
+            p.id !== _editingPersonId &&
+            String(p.name || '').trim().toLowerCase() === name.toLowerCase()
+        );
+        if (dup) {
+            // Show the duplicate hint inline
+            $('personNameHint').hidden = false;
+            $('personName').focus();
+            return;
+        }
+        store.updatePerson(_editingPersonId, { name, relation, color });
+        _editingPersonId = null;
+        $('personModalTitle').textContent = 'Add person';
+        $('personDeleteBtn').hidden = true;
+        personModal.hidden = true;
+        showToast('Person updated.');
+    }, true); // capture phase so this fires before the add-person handler
+
+    /* Delete person from inside the edit modal */
+    $('personDeleteBtn').addEventListener('click', () => {
+        if (!_editingPersonId) return;
+        const person = store.getPersonById(_editingPersonId);
+        if (!person) return;
+        const recCount = store.getRecordings().filter(r => r.personId === _editingPersonId).length;
+        const msg = recCount > 0
+            ? `Delete ${person.name}? Their ${recCount} recording${recCount === 1 ? '' : 's'} will stay but show as "unknown."`
+            : `Delete ${person.name}?`;
+        if (!confirm(msg)) return;
+        store.removePerson(_editingPersonId);
+        _editingPersonId = null;
+        $('personModalTitle').textContent = 'Add person';
+        $('personDeleteBtn').hidden = true;
+        personModal.hidden = true;
+        showToast('Person deleted.');
     });
 
     /* Service worker */

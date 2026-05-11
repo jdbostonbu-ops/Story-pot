@@ -154,9 +154,12 @@
         <button type="button" class="swatch" data-color="#A8A8A8" style="background:#A8A8A8" aria-label="Silver"></button>
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" id="personCancelBtn">Cancel</button>
-        <button type="submit" class="btn btn-solid">Save</button>
+      <div class="modal-actions modal-actions--space">
+        <button type="button" class="btn btn-ghost btn-danger" id="personDeleteBtn" hidden>Delete</button>
+        <div>
+          <button type="button" class="btn btn-ghost" id="personCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-solid">Save</button>
+        </div>
       </div>
     </form>
   </div>
@@ -205,10 +208,10 @@
       <button type="button" class="icon-btn" id="recSetupCloseBtn" aria-label="Close">✕</button>
     </header>
 
-    <label class="form-label" id="recPeopleRowLabel">Who?</label>
+    <p class="form-label" id="recPeopleRowLabel">Who?</p>
     <div class="people-row people-row--small" id="recPeopleRow" role="group" aria-labelledby="recPeopleRowLabel"></div>
 
-    <label class="form-label" id="recCategoryRowLabel">What kind?</label>
+    <p class="form-label" id="recCategoryRowLabel">What kind?</p>
     <div class="filter-row" id="recCategoryRow" role="group" aria-labelledby="recCategoryRowLabel"></div>
 
     <label class="form-label" for="recTitle">Title</label>
@@ -350,6 +353,41 @@
 
     <div class="modal-actions modal-actions--space">
       <button type="button" class="btn btn-ghost btn-danger" id="detailDeleteBtn">Delete</button>
+      <div class="detail-actions-group">
+        <button type="button" class="btn btn-ghost btn-icon-text" id="detailReplacePhotoBtn" aria-label="Replace photo">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+          <span>Photo</span>
+        </button>
+        <button type="button" class="btn btn-ghost btn-icon-text" id="detailDownloadBtn" aria-label="Download recording">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download</span>
+        </button>
+        <button type="button" class="btn btn-ghost btn-icon-text" id="detailShareBtn" aria-label="Share recording" hidden>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+          <span>Share</span>
+        </button>
+        <button type="button" class="btn btn-ghost btn-icon-text" id="detailShareCardBtn" aria-label="Share as card">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="14" x2="15" y2="14"></line>
+          </svg>
+          <span>Card</span>
+        </button>
+      </div>
       <button type="button" class="btn btn-solid" id="detailEditBtn">Edit transcript</button>
     </div>
   </div>
@@ -369,6 +407,32 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" id="editCancelBtn">Cancel</button>
       <button type="button" class="btn btn-solid" id="editSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     REPLACE PHOTO MODAL — opens from detail view
+     ═══════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="replacePhotoModal" hidden role="dialog" aria-modal="true" aria-label="Replace photo">
+  <div class="modal">
+    <header class="modal-head">
+      <h2>Replace photo</h2>
+      <button type="button" class="icon-btn" id="replacePhotoCloseBtn" aria-label="Close">✕</button>
+    </header>
+    <p class="modal-helper">Update the cover photo for this recording.</p>
+    <div class="photo-controls">
+      <button type="button" class="btn btn-ghost photo-btn" id="replacePhotoTakeBtn">
+        <span>Take photo</span>
+      </button>
+      <button type="button" class="btn btn-ghost photo-btn" id="replacePhotoUploadBtn">
+        <span>Upload</span>
+      </button>
+      <input type="file" id="replacePhotoUploadInput" accept="image/*" hidden>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost btn-danger" id="replacePhotoRemoveBtn">Remove photo</button>
+      <button type="button" class="btn btn-ghost" id="replacePhotoCancelBtn">Cancel</button>
     </div>
   </div>
 </div>

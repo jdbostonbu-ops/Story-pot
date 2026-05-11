@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Story Pot — Card</title>
+<meta name="theme-color" content="#0A0A0A" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="icon" type="image/png" href="booknotelogo.png">
+
+<style>
+  :root {
+    --c-paper:        #0A0A0A;
+    --c-paper-2:      #161616;
+    --c-paper-3:      #1F1F1F;
+    --c-divider:      #2A2A2A;
+    --c-ink:          #F5F5F5;
+    --c-ink-soft:     #A8A8A8;
+    --c-muted:        #6B6B6B;
+    --c-accent:       #7C8FFF;
+    --font-display:   'Fraunces', Georgia, serif;
+    --font-body:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono:      ui-monospace, 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100vh; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--c-paper);
+    color: var(--c-ink);
+    -webkit-font-smoothing: antialiased;
+    padding: 24px 20px 48px;
+  }
+
+  /* Toolbar — visible on screen, hidden in print */
+  .card-toolbar {
+    max-width: 720px;
+    margin: 0 auto 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--c-divider);
+  }
+
+  .card-toolbar h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .card-toolbar-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .toolbar-btn {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--c-divider);
+    background: var(--c-paper-2);
+    color: var(--c-ink-soft);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .toolbar-btn:hover {
+    color: var(--c-accent);
+    border-color: var(--c-accent);
+  }
+
+  .toolbar-btn-primary {
+    background: var(--c-accent);
+    color: var(--c-paper);
+    border-color: var(--c-accent);
+  }
+
+  .toolbar-btn-primary:hover {
+    color: var(--c-paper);
+    background: var(--c-accent);
+    box-shadow: 0 0 16px rgba(124, 143, 255, 0.4);
+  }
+
+  /* THE CARD — the printable piece */
+  .card {
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--c-paper-2);
+    border: 1px solid var(--c-divider);
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-eyebrow {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.72rem;
+    color: var(--c-muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .card-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--c-ink);
+    margin-bottom: 12px;
+  }
+
+  .card-attribution {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 1.1rem;
+    color: var(--c-ink-soft);
+    margin-bottom: 28px;
+  }
+
+  .card-attribution-name {
+    color: var(--c-accent);
+    font-weight: 500;
+  }
+
+  .card-photo {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 28px;
+    background: var(--c-paper-3);
+    border: 1px solid var(--c-divider);
+  }
+
+  .card-photo[hidden] { display: none; }
+
+  .card-divider {
+    border: none;
+    border-top: 1px solid var(--c-divider);
+    margin: 24px 0;
+  }
+
+  .card-section-label {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.72rem;
+    color: var(--c-muted);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .card-transcript {
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--c-ink);
+    white-space: pre-wrap;
+  }
+
+  .card-transcript-empty {
+    font-style: italic;
+    color: var(--c-muted);
+  }
+
+  .card-footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--c-divider);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--c-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .card-footer-mark {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    color: var(--c-ink-soft);
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     PRINT STYLES — when the user saves as PDF or prints
+     ════════════════════════════════════════════════════════════ */
+  @media print {
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+
+    body {
+      background: white;
+      color: black;
+      padding: 0;
+    }
+
+    .card-toolbar {
+      display: none;
+    }
+
+    .card {
+      max-width: 100%;
+      background: white;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .card-eyebrow,
+    .card-section-label,
+    .card-footer {
+      color: #666;
+    }
+
+    .card-title {
+      color: black;
+    }
+
+    .card-attribution {
+      color: #333;
+    }
+
+    .card-attribution-name {
+      color: #5048E5;
+    }
+
+    .card-photo {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      max-height: 4in;
+    }
+
+    .card-transcript {
+      color: black;
+    }
+
+    .card-divider,
+    .card-footer {
+      border-color: #ddd;
+    }
+
+    .card-footer-mark {
+      color: #666;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="card-toolbar" id="cardToolbar">
+  <h1>Story Pot Card</h1>
+  <div class="card-toolbar-actions">
+    <button type="button" class="toolbar-btn" id="cardCloseBtn">Close</button>
+    <button type="button" class="toolbar-btn" id="cardShareBtn" hidden>Share</button>
+    <button type="button" class="toolbar-btn toolbar-btn-primary" id="cardPrintBtn">Save as PDF</button>
+  </div>
+</div>
+
+<article class="card" id="cardContent">
+  <p class="card-eyebrow">A Family Memory Archive</p>
+  <span class="card-pill" id="cardPill">Recipe</span>
+  <h1 class="card-title" id="cardTitle">Loading…</h1>
+  <p class="card-attribution">
+    <span id="cardAttributionPrefix">from </span>
+    <span class="card-attribution-name" id="cardPersonName">—</span>
+    <span id="cardDateSuffix"></span>
+  </p>
+
+  <img class="card-photo" id="cardPhoto" alt="" hidden>
+
+  <hr class="card-divider">
+
+  <p class="card-section-label" id="cardSectionLabel">In their words</p>
+  <div class="card-transcript" id="cardTranscript">(No transcript)</div>
+
+  <div class="card-footer">
+    <span id="cardMeta">—</span>
+    <span class="card-footer-mark">Storypot</span>
+  </div>
+</article>
+
+<script>
+(function () {
+    'use strict';
+
+    function formatDate(ms) {
+        const d = new Date(ms);
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function formatDuration(ms) {
+        const totalSec = Math.round((ms || 0) / 1000);
+        if (totalSec < 60) return totalSec + ' sec';
+        const min = Math.floor(totalSec / 60);
+        const sec = totalSec % 60;
+        return `${min}m ${sec.toString().padStart(2, '0')}s`;
+    }
+
+    function isLightOnColor(hex) {
+        const c = (hex || '#000').replace('#', '');
+        if (c.length < 6) return true;
+        const r = parseInt(c.slice(0, 2), 16);
+        const g = parseInt(c.slice(2, 4), 16);
+        const b = parseInt(c.slice(4, 6), 16);
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum < 0.55;
+    }
+
+    /* Load handoff data from sessionStorage. The recorder writes
+       sessionStorage['storypot-dark.card-handoff'] right before opening
+       this page in a new tab. */
+    let card;
+    try {
+        const raw = sessionStorage.getItem('storypot-dark.card-handoff');
+        if (!raw) throw new Error('No card data found');
+        card = JSON.parse(raw);
+    } catch (err) {
+        document.getElementById('cardTitle').textContent = 'No recording data';
+        document.getElementById('cardTranscript').textContent = 'Open a recording from the recorder, then tap Share Card.';
+        return;
+    }
+
+    /* Render */
+    const title = document.getElementById('cardTitle');
+    title.textContent = card.title || '(untitled)';
+
+    const pill = document.getElementById('cardPill');
+    pill.textContent = card.categoryName || 'Recording';
+    if (card.categoryColor) {
+        pill.style.background = card.categoryColor;
+        pill.style.color = isLightOnColor(card.categoryColor) ? '#FFFFFF' : '#0A0A0A';
+    }
+
+    const personEl = document.getElementById('cardPersonName');
+    if (card.personName) {
+        personEl.textContent = card.personName;
+        if (card.personColor) personEl.style.color = card.personColor;
+    } else {
+        document.getElementById('cardAttributionPrefix').textContent = '';
+        personEl.textContent = '';
+    }
+
+    if (card.createdAt) {
+        document.getElementById('cardDateSuffix').textContent = ' · ' + formatDate(card.createdAt);
+    }
+
+    if (card.photoDataUrl) {
+        const photoEl = document.getElementById('cardPhoto');
+        photoEl.src = card.photoDataUrl;
+        photoEl.hidden = false;
+    }
+
+    /* Section label by category */
+    const sectionByCategory = {
+        recipe: 'The recipe',
+        story:  'The story',
+        song:   'The song',
+        poem:   'The poem'
+    };
+    const key = (card.categoryName || '').toLowerCase();
+    document.getElementById('cardSectionLabel').textContent =
+        sectionByCategory[key] || 'In their words';
+
+    const transcript = document.getElementById('cardTranscript');
+    if (card.transcript && card.transcript.trim()) {
+        transcript.textContent = card.transcript;
+    } else {
+        transcript.textContent = '(No transcript was recorded for this piece.)';
+        transcript.classList.add('card-transcript-empty');
+    }
+
+    const metaParts = [];
+    if (card.durationMs) metaParts.push(formatDuration(card.durationMs));
+    if (card.mode) metaParts.push(card.mode === 'video' ? 'audio + video' : 'audio');
+    document.getElementById('cardMeta').textContent = metaParts.join(' · ') || '—';
+
+    /* Toolbar handlers */
+    document.getElementById('cardPrintBtn').addEventListener('click', () => {
+        window.print();
+    });
+
+    document.getElementById('cardCloseBtn').addEventListener('click', () => {
+        window.close();
+        // If window.close didn't work (not opened via JS), navigate back
+        setTimeout(() => {
+            if (!window.closed) window.history.back();
+        }, 100);
+    });
+
+    /* Native share if supported (mobile mostly) */
+    if (navigator.share) {
+        const shareBtn = document.getElementById('cardShareBtn');
+        shareBtn.hidden = false;
+        shareBtn.addEventListener('click', async () => {
+            try {
+                await navigator.share({
+                    title: card.title || 'Story Pot card',
+                    text: `${card.title || 'A recording'}${card.personName ? ` from ${card.personName}` : ''}\n\n${card.transcript || ''}`,
+                    url: window.location.href
+                });
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+                console.warn('Card share failed:', err);
+            }
+        });
+    }
+
+    /* Clean up the handoff entry so it doesn't linger */
+    setTimeout(() => {
+        try { sessionStorage.removeItem('storypot-dark.card-handoff'); } catch {}
+    }, 1000);
+
+})();
+</script>
+
+</body>
+</html>

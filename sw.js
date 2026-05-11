@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = 'storypot-dark-v3';
+const CACHE_VERSION = 'storypot-dark-v4';
 const ASSETS = [
     './',
     './index.html',
@@ -9,6 +9,7 @@ const ASSETS = [
     './recorder.html',
     './style.css',
     './app.js',
+    './card.html',
     './manifest.json',
     './booknotelogo.png'
 ];

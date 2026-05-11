@@ -748,6 +748,103 @@ body {
 }
 
 .modal-actions--space { justify-content: space-between; }
+
+/* ───────────────────────────────────────────────────────
+   v2 FEATURES — detail action buttons, pencil edit, etc.
+   ─────────────────────────────────────────────────────── */
+
+/* Group of icon+text buttons inside detail actions */
+.detail-actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Small icon+text buttons used in the detail action row */
+.btn-icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid var(--c-divider);
+  background: var(--c-paper-2);
+  color: var(--c-ink-soft);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-icon-text:hover,
+.btn-icon-text:focus-visible {
+  color: var(--c-accent);
+  border-color: var(--c-accent);
+  background: var(--c-paper-3);
+}
+
+.btn-icon-text svg {
+  flex-shrink: 0;
+}
+
+.btn-icon-text span {
+  white-space: nowrap;
+}
+
+/* Pencil edit button on person avatars */
+.person-cell {
+  position: relative;
+}
+
+.person-edit-btn {
+  position: absolute;
+  top: -2px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--c-paper-2);
+  border: 1px solid var(--c-divider);
+  color: var(--c-ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+  transition: all 0.15s ease;
+  z-index: 2;
+}
+
+.person-edit-btn:hover,
+.person-edit-btn:focus-visible {
+  background: var(--c-accent);
+  color: var(--c-paper);
+  border-color: var(--c-accent);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.person-edit-btn svg {
+  pointer-events: none;
+}
+
+/* The Add person cell shouldn't show the edit pencil (no data-personId).
+   buildAddPersonCell doesn't add the pencil so this is just defensive. */
+.person-add .person-edit-btn { display: none; }
+
+/* Stack the detail actions group on small screens so they don't crowd */
+@media (max-width: 540px) {
+  .modal-actions--space {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .detail-actions-group {
+    justify-content: center;
+  }
+}
 .modal-actions .btn { flex: 1; min-width: 110px; }
 
 /* ──────────────────────────────────────────────────────────────
