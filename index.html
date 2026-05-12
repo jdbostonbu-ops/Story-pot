@@ -21,19 +21,25 @@
   <!-- HERO -->
   <header class="hero">
 
-    <!-- Top row: wordmark left, version right -->
+    <!-- Top row: wordmark left, mode toggle + version right -->
     <div class="hero-topbar">
       <div class="hero-wordmark">
-        <img src="booknotelogo2.png" width="150px">
+        <img src="twobookslogo.png" width="150px" id="masthead-logo" alt="">
         <span class="hero-wordmark-big">Story</span><span class="hero-wordmark-small">pot</span>
-        
       </div>
-      
-      <span class="hero-version">v.1</span>
+
+      <div class="hero-topbar-right">
+        <!-- Mode toggle: Family Archive vs Team Archive -->
+        <div class="mode-toggle" id="modeToggle" role="group" aria-label="Archive type">
+          <button type="button" class="mode-toggle-btn" data-mode="family" aria-pressed="true">Family</button>
+          <button type="button" class="mode-toggle-btn" data-mode="team" aria-pressed="false">Team</button>
+        </div>
+        <span class="hero-version">v.1</span>
+      </div>
     </div>
 
     <!-- Eyebrow -->
-    <p class="hero-eyebrow">A tradition memory archive</p>
+    <p class="hero-eyebrow" data-mode-label="eyebrow">A tradition memory archive</p>
 
     <!-- Big editorial headline. The slogan is one strong line, italic indigo
          emphasis on the operative phrase. -->
@@ -68,6 +74,7 @@
 
 </div>
 
+<!-- Mode bootstrap + home renderer. Both live in home.js. -->
 <script src="home.js" defer></script>
 </body>
 </html>

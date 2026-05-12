@@ -91,6 +91,54 @@ body {
   text-transform: uppercase;
 }
 
+/* ───────────────────────────────────────────────────────
+   MODE TOGGLE — Family Archive / Team Archive
+   Subtle pill-shaped toggle. Active mode is filled indigo.
+   ─────────────────────────────────────────────────────── */
+.hero-topbar-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  background: var(--paper-2);
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.mode-toggle-btn {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mode-toggle-btn:hover {
+  color: var(--ink);
+}
+
+.mode-toggle-btn--active {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.mode-toggle-btn--active:hover {
+  color: var(--paper);
+}
+
 
 
 .hero-eyebrow {

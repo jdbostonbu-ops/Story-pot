@@ -9,6 +9,79 @@
 'use strict';
 
 /* ─────────────────────────────────────────────────────────────
+   MODE BOOTSTRAP — Family / Team archive toggle
+   Applies masthead labels, swaps the logo, wires the toggle
+   buttons, and exposes window.StoryPotMode for the rest of
+   app.js to read. Self-contained IIFE so it runs immediately.
+   ──────────────────────────────────────────────────────────── */
+(function () {
+    const KEY = 'storypot-dark.active-mode';
+    const LABELS = {
+        family: {
+            family:     'Family',
+            addPerson:  'Add person',
+            editPerson: 'Edit person',
+            tagline:    'A family memory archive',
+            logo:       'booknotelogo2.png'
+        },
+        team: {
+            family:     'Team',
+            addPerson:  'Add contributor',
+            editPerson: 'Edit contributor',
+            tagline:    'A team memory archive',
+            logo:       'twobookslogo.png'
+        }
+    };
+
+    function getMode() {
+        try { return localStorage.getItem(KEY) || 'family'; }
+        catch { return 'family'; }
+    }
+
+    function applyMode() {
+        const mode = getMode();
+        const labels = LABELS[mode] || LABELS.family;
+
+        document.querySelectorAll('[data-mode-label]').forEach(el => {
+            const key = el.getAttribute('data-mode-label');
+            if (labels[key]) el.textContent = labels[key];
+        });
+
+        const logo = document.getElementById('masthead-logo');
+        if (logo) logo.src = labels.logo;
+
+        document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+            const isActive = btn.getAttribute('data-mode') === mode;
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            btn.classList.toggle('mode-toggle-btn--active', isActive);
+        });
+
+        document.body.classList.toggle('mode-team',   mode === 'team');
+        document.body.classList.toggle('mode-family', mode === 'family');
+    }
+
+    function switchMode(newMode) {
+        if (newMode !== 'family' && newMode !== 'team') return;
+        if (newMode === getMode()) return;
+        try { localStorage.setItem(KEY, newMode); } catch {}
+        // Reload so every factory, render, and cache re-initializes
+        // against the new mode's localStorage keys.
+        window.location.reload();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyMode();
+        document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchMode(btn.getAttribute('data-mode'));
+            });
+        });
+    });
+
+    window.StoryPotMode = { get: getMode, apply: applyMode };
+})();
+
+/* ─────────────────────────────────────────────────────────────
    LANGUAGES — for transcription dropdown.
    60+ languages grouped by family. Each group becomes an
    <optgroup> with a bold non-selectable header in the dropdown.
@@ -104,6 +177,113 @@ const LANGUAGE_GROUPS = [
         { code: 'zu-ZA', label: 'ZULU' }
     ]}
 ];
+
+/* ═════════════════════════════════════════════════════════════
+   ARCHIVE TYPE — Family or Team mode.
+   Story Pot can be used as a family memory archive (Marisol recording
+   Nana) OR as a workplace memory archive (Priya running Recipe Fridays
+   for her hybrid team). Same architecture, different labels, fully
+   separate data.
+
+   Implementation: every localStorage key is namespaced under the
+   active mode. IndexedDB blobs are pooled because blobs are content,
+   not context — a recording's metadata knows what mode it belongs to.
+   ═════════════════════════════════════════════════════════════ */
+
+const KEY_ACTIVE_MODE = 'storypot-dark.active-mode';
+
+function activeMode() {
+    try {
+        return localStorage.getItem(KEY_ACTIVE_MODE) || 'family';
+    } catch {
+        return 'family';
+    }
+}
+
+function setActiveMode(mode) {
+    if (mode !== 'family' && mode !== 'team') return;
+    try { localStorage.setItem(KEY_ACTIVE_MODE, mode); } catch {}
+}
+
+/* modeKey('people.v1') → 'storypot-dark.family.people.v1' or
+                          'storypot-dark.team.people.v1' depending on mode. */
+function modeKey(suffix) {
+    return `storypot-dark.${activeMode()}.${suffix}`;
+}
+
+/* Labels swap per mode. Used by render code so the same DOM template
+   produces 'Family' or 'Team' as appropriate. */
+const MODE_LABELS = {
+    family: {
+        modeName:        'Family',
+        addPersonLabel:  '+ add',
+        personSingular:  'person',
+        personPlural:    'people',
+        whoLabel:        'Who?',
+        addPersonTitle:  'Add person',
+        editPersonTitle: 'Edit person',
+        defaultCategories: [
+            { id: 'recipe', name: 'Recipe', color: '#7C8FFF', isDefault: true },
+            { id: 'song',   name: 'Song',   color: '#FFB347', isDefault: true },
+            { id: 'story',  name: 'Story',  color: '#A8A8A8', isDefault: true },
+            { id: 'poem',   name: 'Poem',   color: '#FF6B9D', isDefault: true }
+        ]
+    },
+    team: {
+        modeName:        'Team',
+        addPersonLabel:  '+ add',
+        personSingular:  'contributor',
+        personPlural:    'contributors',
+        whoLabel:        'Who?',
+        addPersonTitle:  'Add contributor',
+        editPersonTitle: 'Edit contributor',
+        defaultCategories: [
+            { id: 'recipe', name: 'Recipe', color: '#7C8FFF', isDefault: true },
+            { id: 'song',   name: 'Song',   color: '#FFB347', isDefault: true },
+            { id: 'story',  name: 'Story',  color: '#A8A8A8', isDefault: true },
+            { id: 'poem',   name: 'Joke',   color: '#FF6B9D', isDefault: true }
+        ]
+    }
+};
+
+function modeLabel(key) {
+    return MODE_LABELS[activeMode()][key] || MODE_LABELS.family[key] || key;
+}
+
+/* ─── One-time migration ─────────────────────────────────────
+   If the user has data saved under the old un-namespaced keys
+   (storypot-dark.people.v1 etc.) — meaning they used Story Pot
+   before this feature shipped — migrate that data into the
+   family.* namespace so they don't lose their recordings. */
+function migrateLegacyKeysToFamilyMode() {
+    const legacyKeys = [
+        'storypot-dark.people.v1',
+        'storypot-dark.categories.v1',
+        'storypot-dark.recordings.v1',
+        'storypot-dark.meta.v1'
+    ];
+    let migrated = 0;
+    legacyKeys.forEach(oldKey => {
+        try {
+            const val = localStorage.getItem(oldKey);
+            if (val === null) return;
+            const suffix = oldKey.replace('storypot-dark.', '');
+            const newKey = `storypot-dark.family.${suffix}`;
+            // Only migrate if the new key doesn't already have data
+            if (localStorage.getItem(newKey) === null) {
+                localStorage.setItem(newKey, val);
+                migrated++;
+            }
+            localStorage.removeItem(oldKey);
+        } catch (err) {
+            console.warn('[storypot] Legacy key migration failed for', oldKey, err);
+        }
+    });
+    if (migrated > 0) {
+        console.log(`[storypot] Migrated ${migrated} legacy keys to family mode.`);
+    }
+}
+migrateLegacyKeysToFamilyMode();
 
 /* ─────────────────────────────────────────────────────────────
    ARCHIVE FACTORY — IndexedDB-backed blob storage
@@ -218,18 +398,15 @@ function createArchive() {
    ──────────────────────────────────────────────────────────── */
 
 function createPersonStore() {
-    const KEY_PEOPLE     = 'storypot-dark.people.v1';
-    const KEY_CATEGORIES = 'storypot-dark.categories.v1';
-    const KEY_RECORDINGS = 'storypot-dark.recordings.v1';
-    const KEY_META       = 'storypot-dark.meta.v1';
+    const KEY_PEOPLE     = modeKey('people.v1');
+    const KEY_CATEGORIES = modeKey('categories.v1');
+    const KEY_RECORDINGS = modeKey('recordings.v1');
+    const KEY_META       = modeKey('meta.v1');
 
-    /* Default categories shipped with the app. */
-    const DEFAULT_CATEGORIES = [
-        { id: 'recipe', name: 'Recipe', color: '#7C8FFF', isDefault: true },
-        { id: 'song',   name: 'Song',   color: '#FFB347', isDefault: true },
-        { id: 'story',  name: 'Story',  color: '#A8A8A8', isDefault: true },
-        { id: 'poem',   name: 'Poem',   color: '#FF6B9D', isDefault: true }
-    ];
+    /* Default categories shipped with the app — mode-specific.
+       Family: Recipe / Song / Story / Poem
+       Team:   Recipe / Song / Story / Joke */
+    const DEFAULT_CATEGORIES = MODE_LABELS[activeMode()].defaultCategories.map(c => ({ ...c }));
 
     function _loadJSON(key, fallback) {
         try {
@@ -2547,7 +2724,7 @@ function init() {
         if (!person) return;
         _editingPersonId = personId;
         const modal = $('personModal');
-        $('personModalTitle').textContent = 'Edit person';
+        $('personModalTitle').textContent = modeLabel('editPersonTitle');
         $('personName').value = person.name || '';
         $('personRelation').value = person.relation || '';
         // Pre-select the matching color swatch
@@ -2569,18 +2746,18 @@ function init() {
     closePersonModal = function() {
         _origClosePerson();
         _editingPersonId = null;
-        $('personModalTitle').textContent = 'Add person';
+        $('personModalTitle').textContent = modeLabel('addPersonTitle');
         $('personDeleteBtn').hidden = true;
     };
     // Rebind the handlers that were attached to the old reference
     $('personCloseBtn').addEventListener('click', () => {
         _editingPersonId = null;
-        $('personModalTitle').textContent = 'Add person';
+        $('personModalTitle').textContent = modeLabel('addPersonTitle');
         $('personDeleteBtn').hidden = true;
     });
     $('personCancelBtn').addEventListener('click', () => {
         _editingPersonId = null;
-        $('personModalTitle').textContent = 'Add person';
+        $('personModalTitle').textContent = modeLabel('addPersonTitle');
         $('personDeleteBtn').hidden = true;
     });
 
@@ -2628,7 +2805,7 @@ function init() {
         }
         store.updatePerson(_editingPersonId, { name, relation, color });
         _editingPersonId = null;
-        $('personModalTitle').textContent = 'Add person';
+        $('personModalTitle').textContent = modeLabel('addPersonTitle');
         $('personDeleteBtn').hidden = true;
         personModal.hidden = true;
         showToast('Person updated.');
@@ -2646,7 +2823,7 @@ function init() {
         if (!confirm(msg)) return;
         store.removePerson(_editingPersonId);
         _editingPersonId = null;
-        $('personModalTitle').textContent = 'Add person';
+        $('personModalTitle').textContent = modeLabel('addPersonTitle');
         $('personDeleteBtn').hidden = true;
         personModal.hidden = true;
         showToast('Person deleted.');

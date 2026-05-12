@@ -38,7 +38,7 @@
     <div class="masthead-stripe" aria-hidden="true"></div>
     <div class="masthead-row">
       <div class="masthead-mark">
-        <img src="booknotelogo2.png" width="150px">
+        <img src="twobookslogo.png" width="150px" id="masthead-logo" alt="">
         <h1 class="wordmark"><span class="wordmark-big">Story</span><span class="wordmark-small">pot</span></h1>
       </div>
       <div class="masthead-info">
@@ -49,11 +49,17 @@
             <path d="M10 21 L10 14 L14 14 L14 21"></path>
           </svg>
         </a>
+        <!-- Mode toggle: switch between Family Archive and Team Archive.
+             Each mode has its own data, fully separate. -->
+        <div class="mode-toggle" id="modeToggle" role="group" aria-label="Archive type">
+          <button type="button" class="mode-toggle-btn" data-mode="family" aria-pressed="true">Family</button>
+          <button type="button" class="mode-toggle-btn" data-mode="team" aria-pressed="false">Team</button>
+        </div>
         <div class="topbar-meta">
           <span class="dot"></span>
           <span>v.1 · local</span>
         </div>
-        <p class="tagline">A family memory archive</p>
+        <p class="tagline" data-mode-label="tagline">A family memory archive</p>
       </div>
     </div>
   </header>
@@ -75,7 +81,7 @@
   <!-- Family — people whose recordings live in the pot -->
   <section class="people-section">
     <header class="section-head">
-      <h2 class="section-label">Family</h2>
+      <h2 class="section-label" data-mode-label="family">Family</h2>
       <button type="button" class="link-btn" id="addPersonBtn">+ add</button>
     </header>
     <div class="people-row" id="peopleRow"></div>
@@ -133,7 +139,7 @@
 <div class="modal-backdrop" id="personModal" hidden role="dialog" aria-modal="true" aria-labelledby="personModalTitle">
   <div class="modal">
     <header class="modal-head">
-      <h2 id="personModalTitle">Add person</h2>
+      <h2 id="personModalTitle" data-mode-label="addPerson">Add person</h2>
       <button type="button" class="icon-btn" id="personCloseBtn" aria-label="Close">✕</button>
     </header>
     <form id="personForm" novalidate>
@@ -496,6 +502,9 @@
 
 <div class="toast" id="toast" aria-live="polite" hidden></div>
 
+<!-- Mode bootstrap (Family / Team toggle, masthead labels, logo swap)
+     lives at the top of app.js so this page and the rest of the app
+     share a single implementation. -->
 <script src="app.js"></script>
 </body>
 </html>

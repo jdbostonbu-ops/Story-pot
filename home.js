@@ -11,25 +11,100 @@
 (function () {
     'use strict';
 
-    /* Storage keys — must match app.js */
-    const KEY_PEOPLE     = 'storypot-dark.people.v1';
-    const KEY_CATEGORIES = 'storypot-dark.categories.v1';
-    const KEY_RECORDINGS = 'storypot-dark.recordings.v1';
+    /* ─── Mode awareness ───
+       Story Pot has two modes: Family Archive and Team Archive.
+       Each mode has its own localStorage namespace. We read the
+       active mode and namespace our keys accordingly. */
+    function activeMode() {
+        try { return localStorage.getItem('storypot-dark.active-mode') || 'family'; }
+        catch { return 'family'; }
+    }
+    function modeKey(suffix) {
+        return `storypot-dark.${activeMode()}.${suffix}`;
+    }
 
-    /* IndexedDB config — must match app.js */
+    /* ─── Mode bootstrap (masthead labels, logo swap, toggle wiring) ───
+       Applies on DOMContentLoaded. Mirrors the bootstrap in app.js so
+       index.html (which loads home.js, not app.js) gets the same
+       Family / Team toggle behavior. */
+    const MODE_KEY = 'storypot-dark.active-mode';
+    const MODE_LABELS = {
+        family: {
+            eyebrow: 'A family memory archive',
+            logo:    'booknotelogo2.png'
+        },
+        team: {
+            eyebrow: 'A team memory archive',
+            logo:    'twobookslogo.png'
+        }
+    };
+
+    function applyMode() {
+        const mode = activeMode();
+        const labels = MODE_LABELS[mode] || MODE_LABELS.family;
+
+        document.querySelectorAll('[data-mode-label]').forEach(el => {
+            const key = el.getAttribute('data-mode-label');
+            if (labels[key]) el.textContent = labels[key];
+        });
+
+        const logo = document.getElementById('masthead-logo');
+        if (logo) logo.src = labels.logo;
+
+        document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+            const isActive = btn.getAttribute('data-mode') === mode;
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            btn.classList.toggle('mode-toggle-btn--active', isActive);
+        });
+
+        document.body.classList.toggle('mode-team',   mode === 'team');
+        document.body.classList.toggle('mode-family', mode === 'family');
+    }
+
+    function switchMode(newMode) {
+        if (newMode !== 'family' && newMode !== 'team') return;
+        if (newMode === activeMode()) return;
+        try { localStorage.setItem(MODE_KEY, newMode); } catch {}
+        window.location.reload();
+    }
+
+    function bindModeToggle() {
+        document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchMode(btn.getAttribute('data-mode'));
+            });
+        });
+    }
+
+    /* Storage keys — mode-scoped, must match app.js */
+    const KEY_PEOPLE     = modeKey('people.v1');
+    const KEY_CATEGORIES = modeKey('categories.v1');
+    const KEY_RECORDINGS = modeKey('recordings.v1');
+
+    /* IndexedDB config — shared across modes (blobs are content,
+       not context; the recording metadata knows the mode). */
     const DB_NAME    = 'storypot-dark.archive';
     const STORE_NAME = 'media';
     const DB_VERSION = 1;
 
-    /* The four canonical home categories, in display order.
-       'id' matches what app.js stores in DEFAULT_CATEGORIES, plus 'poem'
-       which doesn't exist in defaults yet but slot is reserved. */
-    const HOME_SLOTS = [
+    /* The four canonical home slots. The fourth slot's label and
+       placeholder text change per mode:
+         Family mode:  Stories, Recipes, Songs, Poems
+         Team mode:    Stories, Recipes, Songs, Jokes
+       All four use the same category IDs as app.js. */
+    const HOME_SLOTS_FAMILY = [
         { id: 'story',  label: 'Stories', placeholder: 'Save memories and the voices behind them.', accent: '#C7568A' },
         { id: 'recipe', label: 'Recipes', placeholder: 'Capture family cooking traditions, step by step.', accent: '#4A8C72' },
         { id: 'song',   label: 'Songs',   placeholder: 'Preserve lullabies, hymns, and humming.', accent: '#6777FF' },
         { id: 'poem',   label: 'Poems',   placeholder: 'Keep prayers, blessings, and handwritten words.', accent: '#B47828' }
     ];
+    const HOME_SLOTS_TEAM = [
+        { id: 'story',  label: 'Stories', placeholder: 'Storytime retros, founding stories, on-the-job moments.', accent: '#C7568A' },
+        { id: 'recipe', label: 'Recipes', placeholder: 'Recipe Fridays. Heritage Month. The shared kitchen.', accent: '#4A8C72' },
+        { id: 'song',   label: 'Songs',   placeholder: 'Team songs, anthems, celebrations.', accent: '#6777FF' },
+        { id: 'poem',   label: 'Jokes',   placeholder: 'Inside jokes, ice-breakers, things that make the team laugh.', accent: '#B47828' }
+    ];
+    const HOME_SLOTS = activeMode() === 'team' ? HOME_SLOTS_TEAM : HOME_SLOTS_FAMILY;
 
     /* ─── Storage helpers ─── */
     function loadJSON(key, fallback) {
@@ -297,7 +372,7 @@
         head.className = 'home-section-head';
         const headLabel = document.createElement('h2');
         headLabel.className = 'home-section-label';
-        headLabel.textContent = 'In the pot';
+        headLabel.textContent = activeMode() === 'team' ? 'In the team pot' : 'In the pot';
         head.appendChild(headLabel);
         wrapper.appendChild(head);
 
@@ -323,15 +398,27 @@
         container.appendChild(wrapper);
     }
 
+    /* On-load entry point — apply mode UI first so the masthead is
+       correct before render() paints the cards. */
+    function init() {
+        applyMode();
+        bindModeToggle();
+        render();
+    }
+
     /* Run on load. Re-render when the user comes back from the recorder. */
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', render);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        render();
+        init();
     }
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') render();
     });
+
+    /* Expose the same global the old inline script published, in case
+       any other code (or a future page) wants to query/apply mode. */
+    window.StoryPotMode = { get: activeMode, apply: applyMode };
 
 })();
