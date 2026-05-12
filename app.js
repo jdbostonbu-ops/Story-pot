@@ -58,6 +58,20 @@
 
         document.body.classList.toggle('mode-team',   mode === 'team');
         document.body.classList.toggle('mode-family', mode === 'family');
+
+        /* Update the browser chrome color to match the active mode.
+           The <meta name="theme-color"> tag controls the address-bar
+           tint on mobile browsers and the title-bar color in
+           installed PWAs. Family mode = near-black to match the
+           dark theme; Team mode = cool gray to match the light theme.
+           Must match the --c-paper value for the active mode in style.css. */
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+            themeColorMeta.setAttribute(
+                'content',
+                mode === 'team' ? '#F4F6FA' : '#0A0A0A'
+            );
+        }
     }
 
     function switchMode(newMode) {

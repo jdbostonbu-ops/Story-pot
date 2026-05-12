@@ -1683,3 +1683,42 @@ body {
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
+
+/* ════════════════════════════════════════════════════════════════
+   TEAM ARCHIVE — LIGHT MODE OVERRIDES (recorder.html + card.html)
+   ─────────────────────────────────────────────────────────────────
+   When the user toggles to Team Archive, app.js adds the class
+   `mode-team` to <body>. The selectors below ONLY apply when that
+   class is present, so Family Archive stays dark and unchanged.
+
+   Same strategy as home.css: redefine the color variables and
+   every component re-skins itself. The variable names differ from
+   home.css (--c-paper here vs --paper there) because the two
+   stylesheets were authored independently — that's fine, we just
+   match each file's own naming.
+
+   Indigo accent (--c-accent) is intentionally NOT overridden so
+   the brand color stays consistent between Family and Team modes.
+   ════════════════════════════════════════════════════════════════ */
+body.mode-team {
+  /* Surfaces: from near-black to cool gray paper */
+  --c-paper:           #F4F6FA;   /* page background */
+  --c-paper-2:         #FFFFFF;   /* card / panel background */
+  --c-paper-3:         #E8ECF3;   /* deepest surface (e.g. inputs, tiles) */
+  --c-divider:         #E1E5EC;   /* hairline borders */
+  --c-divider-strong:  #C9CFDA;   /* stronger borders (focus rings, dividers) */
+
+  /* Ink: from near-white to near-black */
+  --c-ink:             #1A1A1A;   /* primary text */
+  --c-ink-soft:        #5A5A5A;   /* secondary text */
+  --c-muted:           #8A8A8A;   /* tertiary text / captions */
+
+  /* Card shadow: switch from light-on-dark to dark-on-light.
+     The original --shadow-card used heavy rgba(0,0,0,0.5) which
+     would look harsh on a light page, so we soften it. */
+  --shadow-card: 0 4px 24px rgba(20, 30, 60, 0.08);
+  --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.04);
+
+  /* Accent (--c-accent, --c-accent-deep, --c-accent-soft) and status
+     colors (--c-danger, --c-success) are intentionally NOT overridden. */
+}

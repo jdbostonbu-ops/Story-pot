@@ -514,3 +514,39 @@ body.gallery-open { overflow: hidden; }
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   TEAM ARCHIVE — LIGHT MODE OVERRIDES (home page only)
+   ─────────────────────────────────────────────────────────────────
+   When the user toggles to Team Archive, home.js adds the class
+   `mode-team` to <body>. The selectors below ONLY apply when that
+   class is present, so Family Archive stays dark and unchanged.
+
+   How this works:
+   The whole stylesheet reads colors from CSS variables like
+   --paper, --ink, --divider, etc. By redefining those variables
+   inside `body.mode-team`, every component on the home page
+   re-skins itself with zero per-component changes. We invert the
+   surface/ink palette (dark surfaces become light, light text
+   becomes dark) and keep the indigo accent (#7C8FFF) untouched
+   for brand consistency across both modes.
+
+   Background choice: cool gray (#F4F6FA) — distinct from Family
+   mode's near-black, with a slight tech feel that suits Team mode.
+   ════════════════════════════════════════════════════════════════ */
+body.mode-team {
+  /* Surfaces: from near-black to cool gray paper */
+  --paper:        #F4F6FA;   /* page background */
+  --paper-2:      #FFFFFF;   /* card background (whitest surface) */
+  --paper-3:      #E8ECF3;   /* deepest surface (e.g. gallery tile bg) */
+  --divider:      #E1E5EC;   /* hairline borders */
+
+  /* Ink: from near-white to near-black */
+  --ink:          #1A1A1A;   /* primary text */
+  --ink-soft:     #5A5A5A;   /* secondary text */
+  --muted:        #8A8A8A;   /* tertiary text / captions */
+
+  /* Accent stays the same indigo so brand identity carries across modes.
+     --accent, --accent-deep, --accent-soft are intentionally NOT
+     overridden here. */
+}
