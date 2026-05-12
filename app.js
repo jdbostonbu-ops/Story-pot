@@ -2441,6 +2441,232 @@ function init() {
         }
     });
 
+    /* ─── Build a composite share image (cover photo + transcript baked in) ───
+       Why this exists:
+       When the Share button used to attach the raw audio/video file plus a
+       "from {Person}" text, iOS AirDrop would keep the file but DROP the text.
+       That made AirDropped recordings arrive with no story attached — just the
+       media and no context.
+
+       The fix: render the title, attribution, and full transcript directly INTO
+       an image (using a hidden <canvas>), then share that image. AirDrop sends
+       one image, the recipient sees the whole story, no text-stripping problem.
+
+       This function returns a File (image/png) ready to be passed to
+       navigator.share(). It returns null if anything fails — the caller is
+       expected to fall back to the original raw-file share in that case.
+
+       Mode-aware: builds dark image in Family mode, light image in Team mode,
+       so the shared card matches whichever archive the sender is using. */
+    async function _buildShareImage(rec, person, category, photoDataUrl) {
+        try {
+            // Detect active mode so the baked image uses matching colors.
+            const isTeam = document.body.classList.contains('mode-team');
+            const palette = isTeam
+                ? { bg: '#F4F6FA', surface: '#FFFFFF', ink: '#1A1A1A', inkSoft: '#5A5A5A', muted: '#8A8A8A', divider: '#E1E5EC' }
+                : { bg: '#0A0A0A', surface: '#161616', ink: '#F5F5F5', inkSoft: '#A8A8A8', muted: '#6B6B6B', divider: '#2A2A2A' };
+
+            // Card geometry — fixed width for predictable layout, height grows
+            // with transcript length up to a sensible max.
+            const W = 1080;             // pixel width of the canvas (good for retina)
+            const PAD = 64;              // outer padding
+            const PHOTO_H = photoDataUrl ? 720 : 0;  // square-ish cover photo on top
+            const MAX_H = 2400;          // cap so really long transcripts don't blow up canvas
+
+            // Pre-load the photo (if any) so we can draw it.
+            // We use a Promise wrapper because Image.onload is callback-based.
+            let img = null;
+            if (photoDataUrl) {
+                img = await new Promise((resolve, reject) => {
+                    const i = new Image();
+                    i.onload = () => resolve(i);
+                    i.onerror = () => reject(new Error('photo load failed'));
+                    i.src = photoDataUrl;
+                });
+            }
+
+            // Title and attribution strings.
+            const title = rec.title || '(untitled)';
+            const personName = person ? person.name : '';
+            const dateStr = new Date(rec.createdAt || Date.now()).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+            const attribution = personName
+                ? `from ${personName} · ${dateStr}`
+                : dateStr;
+            const categoryName = category ? (category.name || '').toUpperCase() : '';
+            const categoryColor = category ? (category.color || '#7C8FFF') : '#7C8FFF';
+            const transcript = (rec.transcript || '').trim();
+
+            // First pass: measure how tall the canvas needs to be.
+            // We need to know the wrapped transcript line count before we can
+            // pick the final canvas height. Use an offscreen context for this.
+            const measure = document.createElement('canvas').getContext('2d');
+            const titleFontSize = 64;
+            const transcriptFontSize = 32;
+            const lineHeight = transcriptFontSize * 1.5;
+
+            // Word-wrap helper. Returns an array of lines that fit within maxW.
+            function wrapText(ctx, text, maxW) {
+                const words = text.split(/\s+/);
+                const lines = [];
+                let current = '';
+                for (const word of words) {
+                    const test = current ? current + ' ' + word : word;
+                    if (ctx.measureText(test).width > maxW && current) {
+                        lines.push(current);
+                        current = word;
+                    } else {
+                        current = test;
+                    }
+                }
+                if (current) lines.push(current);
+                return lines;
+            }
+
+            const contentW = W - PAD * 2;
+
+            // Measure title (Fraunces serif — fallback to Georgia if not loaded).
+            measure.font = `600 ${titleFontSize}px Fraunces, Georgia, serif`;
+            const titleLines = wrapText(measure, title, contentW);
+
+            // Measure transcript (Inter — fallback to system sans).
+            measure.font = `400 ${transcriptFontSize}px Inter, -apple-system, sans-serif`;
+            let transcriptLines = transcript
+                ? wrapText(measure, transcript, contentW)
+                : [];
+
+            // Cap transcript at a max number of lines so the image stays sane.
+            // If we exceed the cap, truncate the last line with an ellipsis.
+            const headerSectionH = PHOTO_H + 220;   // photo + space for category/title/attribution
+            const footerH = 120;
+            const availableTranscriptH = MAX_H - headerSectionH - PAD * 2 - footerH;
+            const maxTranscriptLines = Math.floor(availableTranscriptH / lineHeight);
+
+            let truncated = false;
+            if (transcriptLines.length > maxTranscriptLines) {
+                transcriptLines = transcriptLines.slice(0, maxTranscriptLines);
+                // Add ellipsis to the last line to signal truncation.
+                const lastLine = transcriptLines[maxTranscriptLines - 1];
+                transcriptLines[maxTranscriptLines - 1] = lastLine.replace(/\s\S*$/, '') + '…';
+                truncated = true;
+            }
+
+            // Final canvas height = header + transcript lines + footer.
+            const transcriptH = transcriptLines.length * lineHeight;
+            const H = Math.min(
+                MAX_H,
+                headerSectionH + (transcript ? transcriptH + PAD : 0) + footerH
+            );
+
+            // Second pass: actually draw to the real canvas.
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            // Background — solid fill matching the active mode's paper color.
+            ctx.fillStyle = palette.bg;
+            ctx.fillRect(0, 0, W, H);
+
+            // Photo (if any) — full width, cropped to fit the photo box.
+            if (img) {
+                // Draw the photo cropped to "cover" the photo box (like CSS object-fit: cover).
+                const photoBoxH = PHOTO_H;
+                const scale = Math.max(W / img.width, photoBoxH / img.height);
+                const drawW = img.width * scale;
+                const drawH = img.height * scale;
+                const dx = (W - drawW) / 2;
+                const dy = (photoBoxH - drawH) / 2;
+                ctx.drawImage(img, dx, dy, drawW, drawH);
+            } else {
+                // No photo — draw a subtle gradient placeholder so the top isn't empty.
+                const grad = ctx.createLinearGradient(0, 0, 0, 180);
+                grad.addColorStop(0, palette.surface);
+                grad.addColorStop(1, palette.bg);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, 180);
+            }
+
+            let y = (img ? PHOTO_H : 0) + 56;
+
+            // Category badge (color chip + uppercase label).
+            if (categoryName) {
+                ctx.font = `500 22px ui-monospace, Menlo, monospace`;
+                const labelW = ctx.measureText(categoryName).width;
+                const chipW = labelW + 28;
+                const chipH = 32;
+                ctx.fillStyle = categoryColor;
+                ctx.beginPath();
+                ctx.roundRect(PAD, y, chipW, chipH, 999);
+                ctx.fill();
+                ctx.fillStyle = palette.bg;
+                ctx.textBaseline = 'middle';
+                ctx.fillText(categoryName, PAD + 14, y + chipH / 2);
+                y += chipH + 28;
+            }
+
+            // Title (Fraunces serif, large).
+            ctx.fillStyle = palette.ink;
+            ctx.font = `600 ${titleFontSize}px Fraunces, Georgia, serif`;
+            ctx.textBaseline = 'top';
+            for (const line of titleLines) {
+                ctx.fillText(line, PAD, y);
+                y += titleFontSize * 1.1;
+            }
+            y += 16;
+
+            // Attribution (smaller, ink-soft).
+            ctx.fillStyle = palette.inkSoft;
+            ctx.font = `400 italic 28px Fraunces, Georgia, serif`;
+            ctx.fillText(attribution, PAD, y);
+            y += 28 + PAD;
+
+            // Transcript (Inter, body weight).
+            if (transcript) {
+                // Light divider above the transcript.
+                ctx.strokeStyle = palette.divider;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(PAD, y - 24);
+                ctx.lineTo(W - PAD, y - 24);
+                ctx.stroke();
+
+                ctx.fillStyle = palette.ink;
+                ctx.font = `400 ${transcriptFontSize}px Inter, -apple-system, sans-serif`;
+                for (const line of transcriptLines) {
+                    ctx.fillText(line, PAD, y);
+                    y += lineHeight;
+                }
+                if (truncated) {
+                    // Tell the recipient the transcript was clipped.
+                    ctx.fillStyle = palette.muted;
+                    ctx.font = `400 italic 22px Inter, -apple-system, sans-serif`;
+                    ctx.fillText('(transcript truncated)', PAD, y + 8);
+                }
+            }
+
+            // Footer — small Story Pot wordmark in the bottom corner.
+            ctx.fillStyle = palette.muted;
+            ctx.font = `500 22px ui-monospace, Menlo, monospace`;
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('STORY POT', PAD, H - PAD);
+
+            // Convert canvas to PNG blob → wrap as File for navigator.share.
+            const blob = await new Promise((resolve, reject) => {
+                canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+            });
+
+            // Filename: "Story Pot — {title}.png", safe for filesystems.
+            const safeTitle = title.replace(/[^a-z0-9\-_ ]/gi, '').trim() || 'recording';
+            return new File([blob], `Story Pot — ${safeTitle}.png`, { type: 'image/png' });
+        } catch (err) {
+            // If anything goes wrong, return null so the caller can fall back.
+            console.warn('[storypot] Share image build failed:', err);
+            return null;
+        }
+    }
+
     /* ─── Capability detection for share button ───
        Show the Share button whenever navigator.share exists at all.
        The button's click handler has a fallback chain (file → url → clipboard)
@@ -2456,12 +2682,17 @@ function init() {
     _setupShareButton();
 
     /* ─── Native share recording — with smart fallback chain ───
-       Strategy:
-       1. Try file share (audio/video attached). Works on iPhone Safari + Android Chrome.
-       2. If file share fails with anything except user-cancel, fall back to URL+text share.
-          This works on macOS Chrome where canShare({ files }) reports true but the
-          actual share dialog refuses files.
-       3. If URL share also fails, copy a share-text to clipboard.
+       Strategy (updated for Feature C — AirDrop transcript fix):
+       1. Build a composite image that bakes the transcript directly into the
+          image. iOS AirDrop strips the `text` field when files are attached,
+          so we can't rely on it to carry the transcript — we put it on the
+          image itself.
+       2. Try to share BOTH the composite image AND the audio/video file. On
+          iPhone Safari this gives the recipient the story-as-image plus the
+          playable media. On macOS Safari/Chrome that refuses multi-file shares,
+          we fall back to just the image (the user still gets the full story).
+       3. If file share fails entirely, fall back to URL+text share.
+       4. Final fallback: copy share-text to the clipboard.
        User never sees the fallback machinery — just gets something useful. */
     $('detailShareBtn').addEventListener('click', async () => {
         if (!_currentDetailRecId) return;
@@ -2469,11 +2700,35 @@ function init() {
         if (!rec) return;
 
         const person = store.getPersonById(rec.personId);
+        const category = store.getCategoryById(rec.categoryId);
         const title = rec.title || 'Story Pot recording';
         const attribution = person ? `from ${person.name}` : 'from Story Pot';
         const pageUrl = window.location.href;
 
-        // STAGE 1 — Try file share
+        // STAGE 0 — Load the cover photo (if any) as a dataURL so we can
+        // draw it onto the composite image.
+        let photoDataUrl = null;
+        if (rec.photoBlobId) {
+            try {
+                const photoRec = await archive.getBlob(rec.photoBlobId);
+                if (photoRec && photoRec.blob) {
+                    photoDataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(reader.error);
+                        reader.readAsDataURL(photoRec.blob);
+                    });
+                }
+            } catch (err) {
+                console.warn('[storypot] Share: photo load failed:', err);
+            }
+        }
+
+        // STAGE 1 — Build the composite image (transcript baked in).
+        // If this returns null, we fall through to the old raw-file flow.
+        const compositeImage = await _buildShareImage(rec, person, category, photoDataUrl);
+
+        // STAGE 2 — Load the audio/video blob (we may attach it alongside the image).
         let blobRecord = null;
         try {
             blobRecord = await archive.getBlob(rec.blobId);
@@ -2481,30 +2736,80 @@ function init() {
             console.warn('[storypot] Share: blob load failed:', err);
         }
 
-        if (blobRecord && blobRecord.blob && navigator.share && navigator.canShare) {
-            try {
+        // STAGE 3 — Try to share both the composite image AND the media file.
+        // Some platforms (iPhone Safari) accept multi-file shares; others
+        // (macOS) accept only one. We try multi first, then image-only,
+        // then media-only.
+        if (navigator.share && navigator.canShare) {
+            // Build the audio/video File object if available.
+            let mediaFile = null;
+            if (blobRecord && blobRecord.blob) {
                 const filename = _filenameForRec(rec, blobRecord.mimeType || blobRecord.blob.type);
-                const file = new File([blobRecord.blob], filename, {
+                mediaFile = new File([blobRecord.blob], filename, {
                     type: blobRecord.mimeType || blobRecord.blob.type || 'audio/webm'
                 });
-                if (navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        title,
-                        text: attribution,
-                        files: [file]
-                    });
-                    showToast('Shared.');
-                    return;
+            }
+
+            // ATTEMPT A — share image + media together (best case).
+            if (compositeImage && mediaFile) {
+                try {
+                    if (navigator.canShare({ files: [compositeImage, mediaFile] })) {
+                        await navigator.share({
+                            title,
+                            text: attribution,
+                            files: [compositeImage, mediaFile]
+                        });
+                        showToast('Shared.');
+                        return;
+                    }
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                    console.warn('[storypot] Multi-file share failed, trying image only:', err);
                 }
-            } catch (err) {
-                // User canceled — don't fall through, just stop
-                if (err && err.name === 'AbortError') return;
-                console.warn('[storypot] File share failed, trying URL share:', err);
-                // fall through to URL share
+            }
+
+            // ATTEMPT B — share just the composite image (works on macOS where
+            // multi-file is refused). Recipient sees the title + transcript on
+            // the image. This is the path that fixes the AirDrop bug.
+            if (compositeImage) {
+                try {
+                    if (navigator.canShare({ files: [compositeImage] })) {
+                        await navigator.share({
+                            title,
+                            text: attribution,
+                            files: [compositeImage]
+                        });
+                        showToast('Shared.');
+                        return;
+                    }
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                    console.warn('[storypot] Image share failed, trying media only:', err);
+                }
+            }
+
+            // ATTEMPT C — final file-share attempt: just the audio/video file.
+            // This matches the OLD behavior — only used if composite image
+            // generation failed for some reason.
+            if (mediaFile) {
+                try {
+                    if (navigator.canShare({ files: [mediaFile] })) {
+                        await navigator.share({
+                            title,
+                            text: attribution,
+                            files: [mediaFile]
+                        });
+                        showToast('Shared.');
+                        return;
+                    }
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                    console.warn('[storypot] Media-only share failed, trying URL share:', err);
+                }
             }
         }
 
-        // STAGE 2 — Try URL + text share (no file)
+        // STAGE 4 — Try URL + text share (no file).
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -2521,7 +2826,7 @@ function init() {
             }
         }
 
-        // STAGE 3 — Clipboard fallback
+        // STAGE 5 — Clipboard fallback.
         const shareText = `${title} — ${attribution}\nListen on Story Pot: ${pageUrl}`;
         try {
             await navigator.clipboard.writeText(shareText);
