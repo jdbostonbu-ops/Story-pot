@@ -21,7 +21,7 @@ Story Pot ships with a built-in mode toggle on the home screen masthead. Tap **F
 The recipe Nana never wrote down. The lullaby Abuela hummed at the stove. The story Papi tells the same way every Christmas. Family mode is built around the people in your life who hold traditions in their voices and hands. Add Nana, Abuela, Papi, Yia Yia as individual people. Filter the archive by person. Cards on the home dashboard are titled *Stories*, *Recipes*, *Songs*, *Poems*. The masthead reads *"A family memory archive."*
 
 ### Team Mode — The culture rituals of small companies
-The founding story only the first three employees know. The Recipe Friday a coworker brings every Heritage Month. The team anthem someone wrote at the offsite. The inside joke that became a Slack channel. Team mode is built for small businesses and small companies who want to keep the human texture of their culture &mdash; not org charts, not OKRs, but the rituals and stories that make a team feel like a team. The masthead reads *"A team memory archive."* The fourth home-dashboard slot swaps from **Poems** to **Jokes**. Microcopy adjusts throughout: *Family* becomes *Team*, *Add person* becomes *Add contributor*, and category placeholders reframe around culture rituals (*"Recipe Fridays. Heritage Month. The shared kitchen."* / *"Team songs, anthems, celebrations."* / *"Inside jokes, ice-breakers, things that make the team laugh."*).
+The founding story only the first three employees know. The Recipe Friday a coworker brings every Heritage Month. The team anthem someone wrote at the offsite. The inside joke that became a Slack channel. Team mode is built for small businesses and small companies who want to keep the human texture of their culture &mdash; not org charts, not OKRs, but the rituals and stories that make a team feel like a team. The masthead reads *"A team memory archive."* The fourth home-dashboard slot swaps from **Poems** to **Jokes**. Microcopy adjusts throughout: *Family* becomes *Team*, *Add person* becomes *Add contributor*, and category placeholders reframe around culture rituals (*"Recipe Fridays. Heritage Month. The shared kitchen."* / *"Team songs, anthems, celebrations."* / *"Inside jokes, ice-breakers, things that make the team laugh."*). **And the whole app flips to a cool-gray light theme** &mdash; index, recorder, detail view, even the mobile browser address-bar tint &mdash; so the visual context itself signals *you are in the team archive now*, not just a swapped logo. The indigo accent stays the same across both modes, so Story Pot still feels like one brand wearing two outfits.
 
 ### How the two archives stay separate
 
@@ -43,11 +43,13 @@ The IndexedDB blob store is shared across both modes (the media blobs themselves
 
 Either audience opens the same app. The toggle takes one tap.
 
-## 🎨 Brand Identity — Dark Editorial Theme
+## 🎨 Brand Identity — Dark Editorial Theme (and its Team Light Variant)
 
 Story Pot's brand is built around one idea: **some things outlive us, and the voice is one of them**. The aesthetic is dark editorial &mdash; pure black background, white serif type, indigo accent &mdash; because the work the app does (preserving the voices of people who won't always be here, the culture rituals of teams who won't always be the same) deserves a brand that feels like a quiet evening reading, not a Saturday morning push notification.
 
 This was the winner of a four-folder design exploration. Three other versions exist (a warm pastel "Dream Birds" edition, an austere all-white modern editorial edition, and an experimental cozy edition), but **the dark editorial direction was the one that landed**. Photos pop dramatically against black surfaces. Headlines feel like magazine covers. The accent indigo glows against the dark like ink against velvet.
+
+**Team mode runs a light variant of the same brand.** Family mode keeps the original dark editorial aesthetic untouched. Team mode flips the surface and ink palette to cool gray and near-black for instant visual recognition of which archive you're in &mdash; same Fraunces serif, same Inter body type, same indigo accent, same editorial restraint. The two modes are *one brand in two registers*, not two different products: dark for the family evening, light for the team workday.
 
 ### The Indigo, Black, and Quiet Light Palette
 
@@ -66,6 +68,23 @@ This was the winner of a four-folder design exploration. Three other versions ex
 | **Silver** | `#A8A8A8` | The Story category |
 
 The palette breaks the warm-and-fuzzy convention of memory apps. Most family-archive apps default to soft sepia, gentle creams, dusty roses. Story Pot doesn't whisper. **Color does specific jobs:** indigo is action and emphasis (record, hover, the operative word in the hero headline, the active mode pill). Amber and pink and silver each own one category. Ink is content. The surface graduates from `#0A0A0A` to `#1F1F1F` so cards lift off the background subtly without needing borders or shadows.
+
+### The Team Mode Light Palette — Same Brand, Different Register
+
+When the user toggles to Team Archive, the same CSS custom-property system that paints the dark theme re-points to a cool-gray light palette. The brand colors (indigo accent, amber/pink/silver category colors) stay untouched. Only the surfaces and ink flip:
+
+| Color | Hex | Role |
+| :--- | :--- | :--- |
+| **Paper (light)** | `#F4F6FA` | Primary background &mdash; cool gray, distinct from Family mode's near-black at a glance |
+| **Surface 1 (light)** | `#FFFFFF` | Card and panel backgrounds &mdash; the whitest surface, where content lives |
+| **Surface 2 (light)** | `#E8ECF3` | Deepest light surface &mdash; inputs, gallery tile backgrounds |
+| **Divider (light)** | `#E1E5EC` | Hairline borders, separators |
+| **Divider Strong** | `#C9CFDA` | Stronger borders, focus rings |
+| **Ink (light)** | `#1A1A1A` | Primary text &mdash; near-black on light, matching the contrast ratio of `#F5F5F5` on `#0A0A0A` |
+| **Ink Soft (light)** | `#5A5A5A` | Body and secondary text |
+| **Muted (light)** | `#8A8A8A` | Labels, metadata, mono captions |
+
+The light variant is **a single CSS scope** &mdash; `body.mode-team` redefines the color custom properties, and every component on every page re-skins itself with zero per-component changes. The `<meta name="theme-color">` tag also flips dynamically in JavaScript so the mobile browser's address-bar tint matches the active mode. The card shadow softens from `rgba(0,0,0,0.5)` to `rgba(20,30,60,0.08)` because heavy dark shadows look harsh on light surfaces. **No HTML changed** to ship this feature &mdash; the body-class hook was already in place from the original mode toggle, and the CSS variables were already in use throughout. It is the kind of feature that only becomes a one-afternoon job when the codebase has been built with separation of concerns from day one.
 
 <p align="center">
   <img src="twobookslogo.png" alt="Story Pot Logo" width="240">
@@ -115,7 +134,7 @@ The project demonstrates everything Phase I covered, deployed as a working PWA w
 
 ## 🌟 Key Features
 
-- **Family Mode and Team Mode:** Tap the toggle in the masthead to switch between two parallel archives. Each mode has its own people (or contributors), its own categories, its own recordings, its own photos, its own transcripts. Storage namespaces keep the two completely separate. Microcopy adjusts throughout: the masthead eyebrow swaps, *Family* becomes *Team*, *Add person* becomes *Add contributor*, the fourth dashboard slot swaps from **Poems** to **Jokes**, and category placeholders reframe around team culture rituals.
+- **Family Mode and Team Mode:** Tap the toggle in the masthead to switch between two parallel archives. Each mode has its own people (or contributors), its own categories, its own recordings, its own photos, its own transcripts. Storage namespaces keep the two completely separate. Microcopy adjusts throughout: the masthead eyebrow swaps, *Family* becomes *Team*, *Add person* becomes *Add contributor*, the fourth dashboard slot swaps from **Poems** to **Jokes**, and category placeholders reframe around team culture rituals. **The whole app flips from dark editorial to a cool-gray light theme** when Team mode is active &mdash; index, recorder, detail view, and the mobile browser address bar &mdash; so the visual context itself signals which archive you're in, not just a swapped logo.
 - **Audio Recording with Live Waveform:** Capture voice memos of any length using the `MediaRecorder` API. The recording screen shows a live indigo waveform driven by Web Audio's `AnalyserNode`, a big Fraunces serif timer counting up in indigo, and a pulsing red recording dot. Pause and resume mid-recording without losing the take.
 - **Video Recording for Technique Demonstrations:** When Nana wants to *show* you how to fold the pierogi, or when a teammate wants to demo the technique behind the team's signature dish at Recipe Friday, switch to video mode. The same `MediaRecorder` factory handles it &mdash; `getUserMedia` requests both audio and video tracks, the camera preview appears live in the recording screen, and on save the full audio + video blob lands in IndexedDB.
 - **Snap Photo from the Browser:** A "Take photo" button opens a fullscreen camera modal with live video, a "Snap" button captures the current frame as a 1200px-max JPEG (canvas → dataURL → Blob), and the snapped photo attaches as the cover image of the recording you're about to make. No leaving the app, no fumbling with the native camera and re-uploading.
@@ -159,13 +178,13 @@ Story Pot doesn't use cookies, doesn't track you, and doesn't have a database th
 - **Recording:** `MediaRecorder` API with feature-detected MIME types (WebM Opus on Chrome/Firefox/Edge, MP4 on iOS Safari), `getUserMedia` for microphone-only or microphone-plus-camera streams
 - **Photo Capture:** `getUserMedia` for camera access, `<canvas>` element with `drawImage(video, ...)` to grab the current frame, `canvas.toDataURL` → `atob` + `Uint8Array` → `Blob` conversion for synchronous, cross-browser-reliable JPEG output (deliberately avoiding `canvas.toBlob` which silently fails on some Safari versions with getUserMedia streams)
 - **Transcription:** Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`), with 67 BCP 47 language codes from `en-US` to `sw-KE`
-- **PWA:** Web App Manifest with `theme_color: "#0A0A0A"` for the dark mode browser chrome, service worker (`sw.js`) using network-first strategy with offline fallback, full Add-to-Home-Screen support, namespaced cache key `storypot-dark-v7` (bumps on every release that changes shipped assets)
+- **PWA:** Web App Manifest with `theme_color: "#0A0A0A"` for the dark mode browser chrome (the manifest stays dark because the app boots into Family mode by default), a `<meta name="theme-color">` tag in each HTML page that gets updated dynamically in JavaScript so the mobile address-bar tint flips to `#F4F6FA` when Team mode is active, service worker (`sw.js`) using network-first strategy with offline fallback, full Add-to-Home-Screen support, namespaced cache key `storypot-dark-v9` (bumps on every release that changes shipped assets)
 - **Deployment:** GitHub Pages and Vercel &mdash; static site, automatic HTTPS, auto-deploy on every push to `main`
 
 ## 🚀 The User Flow
 
 - **Land on the welcome page** → see the Storypot wordmark in serif at the top-left, the **Family / Team mode toggle** and V.1 stamp at top-right, mode-appropriate eyebrow (*"A FAMILY MEMORY ARCHIVE"* or *"A TEAM MEMORY ARCHIVE"*), the massive Fraunces hero headline *"What we cooked, **what we sang**, what we said."* with the indigo italic emphasis, supporting paragraph, glowing indigo "Begin →" button, and the four-slot dashboard below
-- **Optionally tap the mode toggle** → switch between Family and Team archives; the page reloads and every label, logo, and storage namespace re-initializes against the new mode. Your other archive stays intact for the next time you toggle back.
+- **Optionally tap the mode toggle** → switch between Family and Team archives; the page reloads and every label, logo, and storage namespace re-initializes against the new mode. **Team mode flips the entire app to a cool-gray light theme &mdash; instant visual confirmation that you're in the team archive, not the family one.** Your other archive stays intact for the next time you toggle back.
 - **Tap Begin →** → arrive on the recorder page; see the wordmark masthead, the search input, the empty Family/Team row prompting you to add the first person or contributor
 - **Tap + add in the Family / Team row** → modal opens; type a name (e.g., "Nana" or "Maria"), pick a relation or role, pick an avatar color from six bright pops (indigo / amber / pink / teal / sun / silver), pick a primary language for transcription, tap Save
 - **Tap the indigo glowing FAB record button** → recording-setup screen opens; pick the person/contributor, pick a category (Recipe / Song / Story / Poem-or-Joke / custom), type a title, pick a language from the 67-language `<optgroup>` dropdown, choose audio or video mode, optionally take a photo or upload one, toggle transcription on or off
@@ -357,7 +376,7 @@ A note on Live Server specifically: open `index.html` before clicking "Go Live,"
 
 Story Pot is what I built during Phase I of Thinking with AI &mdash; a single, focused tool that solves one real problem (the recipes, stories, songs, and culture rituals that vanish when the people who held them are gone or the team that lived them moves on) using only the browser, with no backend, no API key, no account, no audio files uploaded anywhere, and a five-factory architecture that handles audio recording, video recording, in-browser camera capture, IndexedDB storage, 67-language transcription, and a two-mode toggle that ships one app for two audiences &mdash; all from first principles.
 
-The dark editorial direction is the one that won the four-folder design battle &mdash; chosen for the way photos pop against black, the way the indigo italic glows against the dark like ink against velvet, and the way the editorial typography lets *"what we sang"* land as the emotional heart of the page. The two-mode toggle was the stretch user story &mdash; the recognition that the same architecture (namespaced storage, mode-aware factories, label swaps) could serve families preserving recipes *and* small companies preserving culture rituals, without forking the codebase, without compromising either audience's experience.
+The dark editorial direction is the one that won the four-folder design battle &mdash; chosen for the way photos pop against black, the way the indigo italic glows against the dark like ink against velvet, and the way the editorial typography lets *"what we sang"* land as the emotional heart of the page. The two-mode toggle was the stretch user story &mdash; the recognition that the same architecture (namespaced storage, mode-aware factories, label swaps) could serve families preserving recipes *and* small companies preserving culture rituals, without forking the codebase, without compromising either audience's experience. The **Team-mode light theme** was a refinement layered on top of that stretch &mdash; a small CSS-only feature that the disciplined separation of structure (HTML), presentation (CSS variables), and behavior (a single `body.mode-team` class hook) made possible in an afternoon instead of an overhaul.
 
 ⭐ Love this project? Give it a star and explore the other deployed projects in this portfolio.
 
