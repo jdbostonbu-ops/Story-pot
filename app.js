@@ -2667,6 +2667,71 @@ function init() {
         }
     }
 
+    /* ─── Send Media button — share the raw audio/video file ───
+       Separate from the Share button (which sends image + transcript).
+       This one sends ONLY the playable media file via navigator.share —
+       AirDrop, Messages, Mail all carry the audio/video file itself.
+       On iPhone Safari this works for both webm and mp4. On macOS Chrome
+       it may refuse certain MIME types (Chrome restriction we can't bypass);
+       the user can still use Download in that case. */
+    function _setupSendMediaButton() {
+        const btn = $('detailSendMediaBtn');
+        if (!btn) return;
+        // Only show if the browser supports native file share at all.
+        if (navigator.share && navigator.canShare) {
+            btn.hidden = false;
+        }
+    }
+    _setupSendMediaButton();
+
+    $('detailSendMediaBtn').addEventListener('click', async () => {
+        if (!_currentDetailRecId) return;
+        const rec = store.getRecordingById(_currentDetailRecId);
+        if (!rec) return;
+
+        const person = store.getPersonById(rec.personId);
+        const title = rec.title || 'Story Pot recording';
+        const attribution = person ? `from ${person.name}` : 'from Story Pot';
+
+        // Load the audio/video blob.
+        let blobRecord = null;
+        try {
+            blobRecord = await archive.getBlob(rec.blobId);
+        } catch (err) {
+            console.warn('[storypot] Send media: blob load failed:', err);
+        }
+
+        if (!blobRecord || !blobRecord.blob) {
+            showToast('No media file to send.');
+            return;
+        }
+
+        // Build the File object.
+        const filename = _filenameForRec(rec, blobRecord.mimeType || blobRecord.blob.type);
+        const mediaFile = new File([blobRecord.blob], filename, {
+            type: blobRecord.mimeType || blobRecord.blob.type || 'audio/webm'
+        });
+
+        // Try to share the media file.
+        try {
+            if (navigator.canShare({ files: [mediaFile] })) {
+                await navigator.share({
+                    title,
+                    text: attribution,
+                    files: [mediaFile]
+                });
+                showToast('Sent.');
+                return;
+            }
+            // Browser refused this file type (e.g. Mac Chrome with webm).
+            showToast('This browser can\'t send the file directly. Try Download.');
+        } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            console.warn('[storypot] Send media failed:', err);
+            showToast('Could not send. Try Download instead.');
+        }
+    });
+
     /* ─── Capability detection for share button ───
        Show the Share button whenever navigator.share exists at all.
        The button's click handler has a fallback chain (file → url → clipboard)
@@ -2728,84 +2793,42 @@ function init() {
         // If this returns null, we fall through to the old raw-file flow.
         const compositeImage = await _buildShareImage(rec, person, category, photoDataUrl);
 
-        // STAGE 2 — Load the audio/video blob (we may attach it alongside the image).
-        let blobRecord = null;
-        try {
-            blobRecord = await archive.getBlob(rec.blobId);
-        } catch (err) {
-            console.warn('[storypot] Share: blob load failed:', err);
+        // Build rich share text with the transcript included — same shape as
+        // the Card view's share. iMessage/Mail show this alongside the image.
+        const shareLines = [title];
+        if (category && category.name) shareLines.push(`(${category.name})`);
+        if (person && person.name) {
+            const dateStr = new Date(rec.createdAt || Date.now()).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+            shareLines.push(`from ${person.name} · ${dateStr}`);
         }
+        shareLines.push('');
+        if (rec.transcript && rec.transcript.trim()) {
+            shareLines.push(rec.transcript.trim());
+        }
+        shareLines.push('');
+        shareLines.push('— shared from Story Pot');
+        const richText = shareLines.join('\n');
 
-        // STAGE 3 — Try to share both the composite image AND the media file.
-        // Some platforms (iPhone Safari) accept multi-file shares; others
-        // (macOS) accept only one. We try multi first, then image-only,
-        // then media-only.
-        if (navigator.share && navigator.canShare) {
-            // Build the audio/video File object if available.
-            let mediaFile = null;
-            if (blobRecord && blobRecord.blob) {
-                const filename = _filenameForRec(rec, blobRecord.mimeType || blobRecord.blob.type);
-                mediaFile = new File([blobRecord.blob], filename, {
-                    type: blobRecord.mimeType || blobRecord.blob.type || 'audio/webm'
-                });
-            }
-
-            // ATTEMPT A — share image + media together (best case).
-            if (compositeImage && mediaFile) {
-                try {
-                    if (navigator.canShare({ files: [compositeImage, mediaFile] })) {
-                        await navigator.share({
-                            title,
-                            text: attribution,
-                            files: [compositeImage, mediaFile]
-                        });
-                        showToast('Shared.');
-                        return;
-                    }
-                } catch (err) {
-                    if (err && err.name === 'AbortError') return;
-                    console.warn('[storypot] Multi-file share failed, trying image only:', err);
+        // STAGE 3 — Share the composite image + rich text. Single attempt,
+        // mirroring exactly what the Card view's Share button does.
+        // The audio/video file is intentionally NOT attached here — the user
+        // can use the Download button to get the media file itself.
+        if (compositeImage && navigator.share && navigator.canShare) {
+            try {
+                if (navigator.canShare({ files: [compositeImage] })) {
+                    await navigator.share({
+                        title,
+                        text: richText,
+                        files: [compositeImage]
+                    });
+                    showToast('Shared.');
+                    return;
                 }
-            }
-
-            // ATTEMPT B — share just the composite image (works on macOS where
-            // multi-file is refused). Recipient sees the title + transcript on
-            // the image. This is the path that fixes the AirDrop bug.
-            if (compositeImage) {
-                try {
-                    if (navigator.canShare({ files: [compositeImage] })) {
-                        await navigator.share({
-                            title,
-                            text: attribution,
-                            files: [compositeImage]
-                        });
-                        showToast('Shared.');
-                        return;
-                    }
-                } catch (err) {
-                    if (err && err.name === 'AbortError') return;
-                    console.warn('[storypot] Image share failed, trying media only:', err);
-                }
-            }
-
-            // ATTEMPT C — final file-share attempt: just the audio/video file.
-            // This matches the OLD behavior — only used if composite image
-            // generation failed for some reason.
-            if (mediaFile) {
-                try {
-                    if (navigator.canShare({ files: [mediaFile] })) {
-                        await navigator.share({
-                            title,
-                            text: attribution,
-                            files: [mediaFile]
-                        });
-                        showToast('Shared.');
-                        return;
-                    }
-                } catch (err) {
-                    if (err && err.name === 'AbortError') return;
-                    console.warn('[storypot] Media-only share failed, trying URL share:', err);
-                }
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+                console.warn('[storypot] Image share failed, trying URL share:', err);
             }
         }
 
