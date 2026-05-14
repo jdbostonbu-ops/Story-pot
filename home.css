@@ -54,7 +54,8 @@ body {
 .hero-topbar {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--divider);
 }
@@ -67,18 +68,32 @@ body {
   color: var(--ink);
   letter-spacing: -0.04em;
   display: inline-flex;
-  align-items: baseline;
-  gap: 1px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The book/note logo image. On phones it's 40px so the wordmark + toggle
+   + version all fit comfortably on one row. On wider screens it grows
+   to a more editorial size since there's plenty of room. */
+#masthead-logo {
+  width: 40px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+@media (min-width: 540px) {
+  #masthead-logo { width: 64px; }
 }
 
 .hero-wordmark-big {
   font-weight: 600;
-  font-size: clamp(3rem, 8vw, 3.6rem);
+  font-size: clamp(1.4rem, 5vw, 2rem);
 }
 
 .hero-wordmark-small {
   font-weight: 600;
-  font-size: clamp(2rem, 8vw, 2.6rem);
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
   opacity: 0.5;
 }
 
@@ -95,11 +110,14 @@ body {
    MODE TOGGLE — Family Archive / Team Archive
    Subtle pill-shaped toggle. Active mode is filled indigo.
    ─────────────────────────────────────────────────────── */
+/* Right side of the topbar: toggle pill on the left of a tiny v.1
+   caption. Both sit on the same line as the wordmark on the left.
+   Horizontal layout means everything stays visible on a phone width. */
 .hero-topbar-right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .mode-toggle {
