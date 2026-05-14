@@ -88,12 +88,12 @@ body {
 
 .hero-wordmark-big {
   font-weight: 600;
-  font-size: clamp(1.4rem, 5vw, 2rem);
+  font-size: clamp(1.8rem, 5vw, 2rem);
 }
 
 .hero-wordmark-small {
   font-weight: 600;
-  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  font-size: clamp(1.4rem, 4vw, 1.6rem);
   opacity: 0.5;
 }
 
