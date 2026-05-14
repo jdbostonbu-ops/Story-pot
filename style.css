@@ -617,6 +617,84 @@ body {
 
 .fab:active { transform: scale(0.96); }
 
+/* ──────────────────────────────────────────────────────────────
+   FAB TOOLTIP — "Record" label
+   ──────────────────────────────────────────────────────────────
+   First-time users see only a single dot on the FAB and don't
+   know it's the record button. This tooltip appears on hover
+   (desktop), focus (keyboard), and tap (touch — because touch
+   triggers :hover on most mobile browsers) so the button's
+   purpose is always discoverable.
+
+   Built as a pseudo-element using data-tooltip="Record" on the
+   button. No JavaScript needed. The arrow is a second pseudo-
+   element forming a small triangle below the bubble.
+   ────────────────────────────────────────────────────────────── */
+.fab[data-tooltip] { position: fixed; }
+
+.fab[data-tooltip]::before,
+.fab[data-tooltip]::after {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.18s var(--ease-snap), transform 0.18s var(--ease-snap);
+}
+
+/* Tooltip bubble */
+.fab[data-tooltip]::before {
+  content: attr(data-tooltip);
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  background: var(--c-ink);
+  color: var(--c-paper);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Tooltip arrow */
+.fab[data-tooltip]::after {
+  content: '';
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--c-ink);
+}
+
+/* Show on hover, focus, or active (covers touch on most devices) */
+.fab[data-tooltip]:hover::before,
+.fab[data-tooltip]:hover::after,
+.fab[data-tooltip]:focus-visible::before,
+.fab[data-tooltip]:focus-visible::after,
+.fab[data-tooltip].fab-show-tooltip::before,
+.fab[data-tooltip].fab-show-tooltip::after {
+  opacity: 1;
+}
+
+.fab[data-tooltip]:hover::before,
+.fab[data-tooltip]:focus-visible::before,
+.fab[data-tooltip].fab-show-tooltip::before {
+  transform: translate(-50%, 0);
+}
+
+.fab[data-tooltip]:hover::after,
+.fab[data-tooltip]:focus-visible::after,
+.fab[data-tooltip].fab-show-tooltip::after {
+  transform: translate(-50%, 0);
+}
+
 @media (min-width: 600px) {
   .fab { bottom: var(--sp-5); right: calc(50% - 350px); width: 64px; height: 64px; }
 }
@@ -1701,23 +1779,22 @@ body {
    the brand color stays consistent between Family and Team modes.
    ════════════════════════════════════════════════════════════════ */
 body.mode-team {
-  /* Surfaces: from near-black to cool gray paper */
-  --c-paper:           #F4F6FA;   /* page background */
-  --c-paper-2:         #FFFFFF;   /* card / panel background */
-  --c-paper-3:         #E8ECF3;   /* deepest surface (e.g. inputs, tiles) */
-  --c-divider:         #E1E5EC;   /* hairline borders */
-  --c-divider-strong:  #C9CFDA;   /* stronger borders (focus rings, dividers) */
+  /* Surfaces: Variant B — Studio Gray (true neutral mid-gray) */
+  --c-paper:           #D9D9D9;   /* page background */
+  --c-paper-2:         #E8E8E8;   /* card / panel background */
+  --c-paper-3:         #CDCDCD;   /* deepest surface (e.g. inputs, tiles) */
+  --c-divider:         #B8B8B8;   /* hairline borders */
+  --c-divider-strong:  #9F9F9F;   /* stronger borders (focus rings, dividers) */
 
   /* Ink: from near-white to near-black */
   --c-ink:             #1A1A1A;   /* primary text */
-  --c-ink-soft:        #5A5A5A;   /* secondary text */
-  --c-muted:           #8A8A8A;   /* tertiary text / captions */
+  --c-ink-soft:        #4A4A4A;   /* secondary text */
+  --c-muted:           #7A7A7A;   /* tertiary text / captions */
 
-  /* Card shadow: switch from light-on-dark to dark-on-light.
-     The original --shadow-card used heavy rgba(0,0,0,0.5) which
-     would look harsh on a light page, so we soften it. */
-  --shadow-card: 0 4px 24px rgba(20, 30, 60, 0.08);
-  --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.04);
+  /* Card shadow: softer on the slightly darker surface, but still
+     present enough to give cards lift. Tuned for Studio Gray. */
+  --shadow-card: 0 4px 24px rgba(20, 20, 20, 0.10);
+  --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.05);
 
   /* Accent (--c-accent, --c-accent-deep, --c-accent-soft) and status
      colors (--c-danger, --c-success) are intentionally NOT overridden. */

@@ -1650,6 +1650,42 @@ function init() {
         openRecordingSetup();
     });
 
+    /* ===== FAB tooltip — auto-show on first visit ===========================
+       New users see only a dot on the FAB and don't know it's the record
+       button. On the first visit per session, briefly show the "Record"
+       tooltip (no interaction needed). After they've seen it once, the
+       tooltip stays available via hover/focus/tap but doesn't auto-show
+       again. Uses sessionStorage so it can re-introduce on future sessions
+       if the user comes back later.
+       ===================================================================== */
+    try {
+        if (!sessionStorage.getItem('sp_fab_tooltip_seen')) {
+            // Wait a moment so the user's eye lands on the page first
+            setTimeout(() => {
+                fabBtn.classList.add('fab-show-tooltip');
+                // Fade it back out after 3.5 seconds
+                setTimeout(() => {
+                    fabBtn.classList.remove('fab-show-tooltip');
+                }, 3500);
+            }, 900);
+            sessionStorage.setItem('sp_fab_tooltip_seen', '1');
+        }
+    } catch (e) {
+        // sessionStorage can throw in privacy modes; harmless if it does.
+    }
+
+    /* ===== Touch support for FAB tooltip ====================================
+       On some mobile browsers, :hover doesn't fire reliably on tap. Show
+       the tooltip briefly on touchstart so touch users still see the
+       label before the tap registers as a click.
+       ===================================================================== */
+    fabBtn.addEventListener('touchstart', () => {
+        fabBtn.classList.add('fab-show-tooltip');
+        setTimeout(() => {
+            fabBtn.classList.remove('fab-show-tooltip');
+        }, 1500);
+    }, { passive: true });
+
     /* ===== Recording flow ===== */
     const recModal      = $('recModal');
     const recSetup      = $('recSetup');

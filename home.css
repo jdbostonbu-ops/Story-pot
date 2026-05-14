@@ -535,102 +535,18 @@ body.gallery-open { overflow: hidden; }
    mode's near-black, with a slight tech feel that suits Team mode.
    ════════════════════════════════════════════════════════════════ */
 body.mode-team {
-  /* Surfaces: from near-black to cool gray paper */
-  --paper:        #F4F6FA;   /* page background */
-  --paper-2:      #FFFFFF;   /* card background (whitest surface) */
-  --paper-3:      #E8ECF3;   /* deepest surface (e.g. gallery tile bg) */
-  --divider:      #E1E5EC;   /* hairline borders */
+  /* Surfaces: Variant B — Studio Gray (true neutral mid-gray) */
+  --paper:        #D9D9D9;   /* page background */
+  --paper-2:      #E8E8E8;   /* card background */
+  --paper-3:      #CDCDCD;   /* deepest surface (e.g. gallery tile bg) */
+  --divider:      #B8B8B8;   /* hairline borders */
 
   /* Ink: from near-white to near-black */
   --ink:          #1A1A1A;   /* primary text */
-  --ink-soft:     #5A5A5A;   /* secondary text */
-  --muted:        #8A8A8A;   /* tertiary text / captions */
+  --ink-soft:     #4A4A4A;   /* secondary text */
+  --muted:        #7A7A7A;   /* tertiary text / captions */
 
   /* Accent stays the same indigo so brand identity carries across modes.
      --accent, --accent-deep, --accent-soft are intentionally NOT
      overridden here. */
-}
-
-/* ════════════════════════════════════════════════════════════════
-   FEEDBACK FOOTER — bottom-of-page invitation to fill out Tally
-   ─────────────────────────────────────────────────────────────────
-   Sits below the recordings dashboard. Uses the same CSS variables
-   as the rest of the page so it inherits both Family (dark) and
-   Team (light) modes automatically with no extra overrides.
-
-   Visual hierarchy: small uppercase eyebrow → quiet body line →
-   primary indigo CTA → tiny meta line. Matches the editorial
-   rhythm of the hero up top.
-   ════════════════════════════════════════════════════════════════ */
-.home-feedback {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 32px 20px 8px;
-  margin-top: 16px;
-  border-top: 1px solid var(--divider);
-  text-align: center;
-}
-
-.home-feedback-eyebrow {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 0.72rem;
-  color: var(--muted);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.home-feedback-line {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 1.05rem;
-  line-height: 1.4;
-  color: var(--ink-soft);
-  max-width: 360px;
-  margin: 0;
-}
-
-.home-feedback-cta {
-  background: transparent;
-  color: var(--accent);
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 12px 24px;
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  transition: all 0.15s ease;
-}
-
-.home-feedback-cta:hover {
-  background: var(--accent);
-  color: var(--paper);
-  box-shadow: 0 0 32px rgba(124, 143, 255, 0.35);
-}
-
-.home-feedback-arrow {
-  font-size: 1.05em;
-  transition: transform 0.15s ease;
-}
-
-.home-feedback-cta:hover .home-feedback-arrow {
-  transform: translateX(3px);
-}
-
-.home-feedback-meta {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin: 0;
-  letter-spacing: 0.01em;
 }

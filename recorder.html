@@ -130,8 +130,10 @@
 
 </main>
 
-<!-- The big record button (FAB) -->
-<button type="button" class="fab" id="fabBtn" aria-label="Record">●</button>
+<!-- The big record button (FAB). The data-tooltip attribute adds a
+     visible "Record" label that appears on hover, focus, or touch
+     so first-time users know what the button does. -->
+<button type="button" class="fab" id="fabBtn" aria-label="Record" data-tooltip="Record">●</button>
 
 <!-- ════════════════════════════════════════════════════════════
      ADD PERSON MODAL
@@ -360,12 +362,12 @@
     <div class="modal-actions modal-actions--space">
       <button type="button" class="btn btn-ghost btn-danger" id="detailDeleteBtn">Delete</button>
       <div class="detail-actions-group">
-        <button type="button" class="btn btn-ghost btn-icon-text" id="detailReplacePhotoBtn" aria-label="Replace photo">
+        <button type="button" class="btn btn-ghost btn-icon-text" id="detailReplacePhotoBtn" aria-label="Update photo">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
             <circle cx="12" cy="13" r="4"></circle>
           </svg>
-          <span>Photo</span>
+          <span>Update photo</span>
         </button>
         <button type="button" class="btn btn-ghost btn-icon-text" id="detailDownloadBtn" aria-label="Download recording">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
