@@ -92,7 +92,7 @@ The light variant is **a single CSS scope** &mdash; `body.mode-team` redefines t
 
 ### The Two Logos
 
-Story Pot ships with two book-illustrated logos that swap based on the active mode. **Family mode** uses `twobookslogo.png` &mdash; a single book with musical notes flowing from it, the original Story Pot mark. **Team mode** uses `twobookslogo.png` &mdash; two books side by side, signaling the shared, collective nature of the team archive. Both render in the same cyan-and-purple palette so the masthead feels like one design system, not two different brands.
+Story Pot ships with two book-illustrated logos that swap based on the active mode. **Family mode** uses `booknotelogo.png` &mdash; a single book with musical notes flowing from it, the original Story Pot mark. **Team mode** uses `twobookslogo.png` &mdash; two books side by side, signaling the shared, collective nature of the team archive. Both render in the same cyan-and-purple palette so the masthead feels like one design system, not two different brands.
 
 ### The Hero — Editorial Headline, One Strong Move
 
