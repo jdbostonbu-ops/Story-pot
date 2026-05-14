@@ -165,6 +165,8 @@ Story Pot was built to know nothing about you, period. This is true in both Fami
 - **The one privacy trade-off &mdash; transcription.** The Web Speech API works by sending audio to Apple or Google's recognizer for the seconds it takes to convert speech to text, then returns the text. **Story Pot is transparent about this:** the trust line and the privacy notes inside the app explain what happens. You can decline transcription and use Story Pot as a pure-local audio archive.
 - **No notifications, no permissions you don't expect.** Story Pot asks for the microphone (for audio) and camera (for video and snap photo) permissions only when you tap the relevant button &mdash; never on page load. No location, no contacts, no notification permission, nothing else.
 
+`However, if you don't use the Story Pot app per iOS policy, for 7-30 days your data will be erased.`
+
 Story Pot doesn't use cookies, doesn't track you, and doesn't have a database that stores anything about you.
 
 ## 🛠️ Tech Stack
