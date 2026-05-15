@@ -310,30 +310,83 @@ migrateLegacyKeysToFamilyMode();
      - { id, blob, mimeType, durationMs, createdAt }
    ──────────────────────────────────────────────────────────── */
 
+// Main function that creates and manages the archive system
 function createArchive() {
-    const DB_NAME    = 'storypot-dark.archive';
-    const STORE_NAME = 'media';
-    const DB_VERSION = 1;
-    let _db = null;
 
-    /* Open (or create) the database. Called lazily. */
+    // Name of the IndexedDB database
+    const DB_NAME = 'storypot-dark.archive';
+
+    // Name of the object store (similar to a table in SQL)
+    const STORE_NAME = 'media';
+
+    // Database version number
+    // If this number changes later, IndexedDB triggers onupgradeneeded
+    const DB_VERSION = 1;
+
+    // Variable to hold the database connection once opened
+    let _db = null; // let_db = null is mutable private state; the underscore prefix is a conventional meaning "private don't 
+    // touch from the outside"
+
+    /* 
+      Open (or create) the database.
+      Called lazily = only opens when needed.
+    */
     function _openDB() {
+
+        // If database already exists in memory,
+        // immediately return it as a resolved Promise
         if (_db) return Promise.resolve(_db);
+
+        // Return a Promise because IndexedDB is asynchronous
         return new Promise((resolve, reject) => {
+
+            // Check if browser supports IndexedDB
             if (!window.indexedDB) {
+
+                // Reject promise with error message
                 reject(new Error('IndexedDB not supported in this browser.'));
+
+                // Stop execution
                 return;
             }
+
+            // Open database with name + version
+            // If database doesn't exist, browser creates it
             const req = indexedDB.open(DB_NAME, DB_VERSION);
+
+            // If database opening fails
             req.onerror = () => reject(req.error);
+
+            // Runs ONLY:
+            // - first database creation
+            // - or when DB_VERSION changes
             req.onupgradeneeded = (e) => {
+
+                // Get database object from event
                 const db = e.target.result;
+
+                // Check if object store already exists
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+
+                    // Create object store called "media"
+                    db.createObjectStore(STORE_NAME, {
+
+                        // Each record gets an "id" property
+                        keyPath: 'id',
+
+                        // Automatically increment IDs
+                        autoIncrement: true
+                    });
                 }
             };
+
+            // Runs when database successfully opens
             req.onsuccess = () => {
+
+                // Save database connection in memory
                 _db = req.result;
+
+                // Resolve promise with database connection
                 resolve(_db);
             };
         });

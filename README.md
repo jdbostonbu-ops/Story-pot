@@ -271,7 +271,7 @@ Story Pot is a Progressive Web App (PWA), which means it can install to your hom
 ### Install Steps
 
 1. **Open Safari on your iPhone** (not Chrome &mdash; iOS only allows PWA installation through Safari)
-2. **Visit** the deployed URL (e.g. `https://jdbostonbu-ops.github.io/Story-pot/`)
+2. **Visit** the deployed URL (e.g. `https://story-pot.vercel.app/`)
 3. **Tap the Share button** &mdash; the square with the up-arrow at the bottom of Safari
 4. **Scroll down and tap "Add to Home Screen"**
 5. **Confirm the name** (default is "Story Pot") and tap **Add**
