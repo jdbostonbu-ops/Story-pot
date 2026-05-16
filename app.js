@@ -1494,7 +1494,7 @@ function init() {
 
     /* Recording item click → open detail modal */
     recordingsList.addEventListener('click', (e) => {
-        const item = e.target.closest('.recording-item[data-rec-id]');
+        const item = e.target.closest('.recording-item[data-rec-id], .recording-tile[data-rec-id]');
         if (!item) return;
         openDetailModal(item.dataset.recId);
     });
